@@ -77,16 +77,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "박현준 게임 — 달리고 키우고 티켓 사기" },
+      {
+        name: "description",
+        content: "달리기로 돈을 벌고 식물하우스에서 당근과 해바라기를 키워 티켓을 사는 아늑한 게임.",
+      },
+      { property: "og:title", content: "박현준 게임" },
+      {
+        property: "og:description",
+        content: "달리기로 돈을 벌고 작물을 키워 티켓을 모으는 아늑한 게임.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
