@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { AvatarCharacter } from "@/components/AvatarCharacter";
 import { HomeButton } from "@/components/HomeButton";
+import type { AvatarState } from "@/lib/avatar-system";
 import { useGame, won } from "@/lib/game-state";
 import {
   RACE_FINISH_SCORE,
@@ -19,7 +21,7 @@ export const Route = createFileRoute("/race")({
       { title: "박현준 게임 — 레이싱" },
       {
         name: "description",
-        content: "화면을 탭해서 네 개의 스테이지를 달리고 사다리와 크레인을 움직이며 무적과 날기 아이템으로 변신하는 레이싱 게임.",
+        content: "꾸민 캐릭터로 화면을 탭하며 네 개의 스테이지를 달리고 사다리와 크레인을 움직이는 레이싱 게임.",
       },
     ],
   }),
@@ -35,21 +37,22 @@ const eventView: Record<TrackEvent, { emoji: string; label: string }> = {
 
 const powerView: Record<RacePower, { emoji: string; label: string }> = {
   normal: { emoji: "🏃", label: "달리는 중" },
-  invincible: { emoji: "🌟🏃", label: "무적 변신" },
-  flying: { emoji: "🪽🏃", label: "날기 변신" },
+  invincible: { emoji: "🌟", label: "무적 변신" },
+  flying: { emoji: "🪽", label: "날기 변신" },
 };
 
 function StageScene({
   stageId,
   step,
   power,
+  equipped,
 }: {
   stageId: 1 | 2 | 3 | 4;
   step: number;
   power: RacePower;
+  equipped: AvatarState["equipped"];
 }) {
   const scene = getRaceScene(stageId, step, power);
-  const runner = powerView[power].emoji;
 
   return (
     <div className="relative h-52 w-full overflow-hidden rounded-3xl border-2 border-border bg-[linear-gradient(to_bottom,var(--color-sky),var(--color-card))] shadow-inner">
@@ -104,15 +107,14 @@ function StageScene({
       )}
 
       <div
-        className="absolute text-6xl transition-all duration-300 ease-out"
+        className="absolute transition-all duration-300 ease-out"
         style={{
-          left: `calc(${scene.runnerX}% - 28px)`,
-          top: `calc(${scene.runnerY}% - 28px)`,
-          transform: power === "invincible" ? "scale(1.12) rotate(-4deg)" : "scale(1)",
+          left: `calc(${scene.runnerX}% - 32px)`,
+          top: `calc(${scene.runnerY}% - 38px)`,
+          transform: power === "invincible" ? "scale(1.08) rotate(-3deg)" : "scale(1)",
         }}
-        aria-hidden="true"
       >
-        {runner}
+        <AvatarCharacter equipped={equipped} size="sm" power={power} />
       </div>
 
       <div className="absolute inset-x-3 bottom-2 rounded-full bg-card/90 px-3 py-1 text-base shadow-sm">
@@ -172,7 +174,12 @@ function RacePage() {
           aria-label={race.finished ? "레이스 완주" : "레이스 화면 탭하기"}
         >
           <div className="mx-auto flex min-h-[450px] flex-col items-center justify-between gap-4">
-            <StageScene stageId={stage.id} step={race.step} power={race.power} />
+            <StageScene
+              stageId={stage.id}
+              step={race.step}
+              power={race.power}
+              equipped={game.avatar.equipped}
+            />
 
             <div className="flex flex-wrap items-center justify-center gap-3">
               <span className="rounded-full bg-secondary px-4 py-2 text-lg">
