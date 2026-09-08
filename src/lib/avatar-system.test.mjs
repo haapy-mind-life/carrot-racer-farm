@@ -75,3 +75,9 @@ test("catalog ids are unique and prices are finite non-negative numbers", () => 
     assert.ok(item.price >= 0);
   }
 });
+
+test("missing legacy avatar becomes an independent valid default", () => {
+  const normalized = normalizeAvatarState(undefined);
+  assert.deepEqual(normalized, DEFAULT_AVATAR);
+  assert.notEqual(normalized.ownedItems, DEFAULT_AVATAR.ownedItems);
+});
