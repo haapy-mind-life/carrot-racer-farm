@@ -28,7 +28,11 @@ export function TownWorld({ equipped, onNavigate }: TownWorldProps) {
     timerRef.current = null;
   };
 
-  useEffect(() => clearPending, []);
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const moveTo = (target: TownPoint, route?: "/avatar" | "/race" | "/greenhouse") => {
     clearPending();
