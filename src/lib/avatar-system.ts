@@ -1,4 +1,5 @@
 export type AvatarCategory = "hair" | "top" | "bottom" | "shoes";
+export type AvatarSetId = "everyday" | "sport" | "street" | "hero";
 
 export type AvatarItem = {
   id: string;
@@ -6,6 +7,9 @@ export type AvatarItem = {
   name: string;
   visual: string;
   price: number;
+  styleKey: string;
+  setId: AvatarSetId;
+  tier: 1 | 2 | 3 | 4;
 };
 
 export type AvatarState = {
@@ -27,28 +31,28 @@ export type AvatarEquipResult = {
 };
 
 export const AVATAR_ITEMS: AvatarItem[] = [
-  { id: "hair-short", category: "hair", name: "짧은 머리", visual: "🙂", price: 0 },
-  { id: "hair-brown", category: "hair", name: "갈색 머리", visual: "🟤", price: 0 },
-  { id: "hair-spiky", category: "hair", name: "뾰족 머리", visual: "⚡", price: 150 },
-  { id: "hair-blue", category: "hair", name: "파란 머리", visual: "🔵", price: 300 },
-  { id: "hair-star", category: "hair", name: "별 머리", visual: "⭐", price: 600 },
-  { id: "hair-crown", category: "hair", name: "왕관 머리", visual: "👑", price: 1200 },
-  { id: "top-shirt", category: "top", name: "기본 티셔츠", visual: "👕", price: 0 },
-  { id: "top-green", category: "top", name: "초록 티셔츠", visual: "🟢", price: 0 },
-  { id: "top-red", category: "top", name: "빨간 티셔츠", visual: "🔴", price: 150 },
-  { id: "top-hoodie", category: "top", name: "후드티", visual: "🧥", price: 300 },
-  { id: "top-rainbow", category: "top", name: "무지개 옷", visual: "🌈", price: 600 },
-  { id: "top-hero", category: "top", name: "히어로 옷", visual: "🦸", price: 1200 },
-  { id: "bottom-shorts", category: "bottom", name: "기본 반바지", visual: "🩳", price: 0 },
-  { id: "bottom-jeans", category: "bottom", name: "청바지", visual: "👖", price: 0 },
-  { id: "bottom-green", category: "bottom", name: "초록 바지", visual: "🟩", price: 200 },
-  { id: "bottom-sport", category: "bottom", name: "운동 바지", visual: "🏃", price: 450 },
-  { id: "bottom-gold", category: "bottom", name: "황금 바지", visual: "✨", price: 900 },
-  { id: "shoes-sneakers", category: "shoes", name: "기본 운동화", visual: "👟", price: 0 },
-  { id: "shoes-blue", category: "shoes", name: "파란 운동화", visual: "🔵", price: 0 },
-  { id: "shoes-red", category: "shoes", name: "빨간 운동화", visual: "🔴", price: 200 },
-  { id: "shoes-boots", category: "shoes", name: "튼튼한 부츠", visual: "🥾", price: 450 },
-  { id: "shoes-rocket", category: "shoes", name: "로켓 신발", visual: "🚀", price: 900 },
+  { id: "hair-short", category: "hair", name: "짧은 머리", visual: "🙂", price: 0, styleKey: "hair-short", setId: "everyday", tier: 1 },
+  { id: "hair-brown", category: "hair", name: "갈색 머리", visual: "🟤", price: 0, styleKey: "hair-swoop", setId: "everyday", tier: 1 },
+  { id: "hair-spiky", category: "hair", name: "뾰족 머리", visual: "⚡", price: 150, styleKey: "hair-spike", setId: "sport", tier: 2 },
+  { id: "hair-blue", category: "hair", name: "파란 머리", visual: "🔵", price: 300, styleKey: "hair-blue", setId: "street", tier: 2 },
+  { id: "hair-star", category: "hair", name: "별 머리", visual: "⭐", price: 600, styleKey: "hair-star", setId: "hero", tier: 3 },
+  { id: "hair-crown", category: "hair", name: "왕관 머리", visual: "👑", price: 1200, styleKey: "hair-crown", setId: "hero", tier: 4 },
+  { id: "top-shirt", category: "top", name: "기본 티셔츠", visual: "👕", price: 0, styleKey: "top-basic", setId: "everyday", tier: 1 },
+  { id: "top-green", category: "top", name: "초록 티셔츠", visual: "🟢", price: 0, styleKey: "top-green", setId: "everyday", tier: 1 },
+  { id: "top-red", category: "top", name: "빨간 티셔츠", visual: "🔴", price: 150, styleKey: "top-sport", setId: "sport", tier: 2 },
+  { id: "top-hoodie", category: "top", name: "후드티", visual: "🧥", price: 300, styleKey: "top-hoodie", setId: "street", tier: 2 },
+  { id: "top-rainbow", category: "top", name: "무지개 옷", visual: "🌈", price: 600, styleKey: "top-rainbow", setId: "street", tier: 3 },
+  { id: "top-hero", category: "top", name: "히어로 옷", visual: "🦸", price: 1200, styleKey: "top-hero", setId: "hero", tier: 4 },
+  { id: "bottom-shorts", category: "bottom", name: "기본 반바지", visual: "🩳", price: 0, styleKey: "bottom-shorts", setId: "everyday", tier: 1 },
+  { id: "bottom-jeans", category: "bottom", name: "청바지", visual: "👖", price: 0, styleKey: "bottom-jeans", setId: "street", tier: 1 },
+  { id: "bottom-green", category: "bottom", name: "초록 바지", visual: "🟩", price: 200, styleKey: "bottom-green", setId: "everyday", tier: 2 },
+  { id: "bottom-sport", category: "bottom", name: "운동 바지", visual: "🏃", price: 450, styleKey: "bottom-sport", setId: "sport", tier: 2 },
+  { id: "bottom-gold", category: "bottom", name: "황금 바지", visual: "✨", price: 900, styleKey: "bottom-gold", setId: "hero", tier: 4 },
+  { id: "shoes-sneakers", category: "shoes", name: "기본 운동화", visual: "👟", price: 0, styleKey: "shoes-sneakers", setId: "everyday", tier: 1 },
+  { id: "shoes-blue", category: "shoes", name: "파란 운동화", visual: "🔵", price: 0, styleKey: "shoes-blue", setId: "sport", tier: 1 },
+  { id: "shoes-red", category: "shoes", name: "빨간 운동화", visual: "🔴", price: 200, styleKey: "shoes-red", setId: "sport", tier: 2 },
+  { id: "shoes-boots", category: "shoes", name: "튼튼한 부츠", visual: "🥾", price: 450, styleKey: "shoes-boots", setId: "street", tier: 3 },
+  { id: "shoes-rocket", category: "shoes", name: "로켓 신발", visual: "🚀", price: 900, styleKey: "shoes-rocket", setId: "hero", tier: 4 },
 ];
 
 const starters = AVATAR_ITEMS.filter((item) => item.price === 0).map((item) => item.id);
