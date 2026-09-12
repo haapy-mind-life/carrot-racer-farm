@@ -19,6 +19,7 @@ const START: TownPoint = { x: 44, y: 59 };
 export function TownWorld({ equipped, onNavigate }: TownWorldProps) {
   const [position, setPosition] = useState<TownPoint>(START);
   const [walking, setWalking] = useState(false);
+  const [moveDuration, setMoveDuration] = useState(180);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const worldRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +34,7 @@ export function TownWorld({ equipped, onNavigate }: TownWorldProps) {
     clearPending();
     const next = clampTownPoint(target);
     const duration = movementDurationMs(townDistance(position, next));
+    setMoveDuration(duration);
     setWalking(true);
     setPosition(next);
     timerRef.current = setTimeout(() => {
@@ -89,7 +91,7 @@ export function TownWorld({ equipped, onNavigate }: TownWorldProps) {
 
       <div
         className={`town-avatar pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2 transition-[left,top] ease-linear ${walking ? "town-avatar--walking" : ""}`}
-        style={{ left: `${position.x}%`, top: `${position.y}%`, transitionDuration: `${movementDurationMs(25)}ms` }}
+        style={{ left: `${position.x}%`, top: `${position.y}%`, transitionDuration: `${moveDuration}ms` }}
       >
         <AvatarCharacter equipped={equipped} size="md" />
       </div>
