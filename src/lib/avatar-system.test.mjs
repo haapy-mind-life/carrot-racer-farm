@@ -81,3 +81,27 @@ test("missing legacy avatar becomes an independent valid default", () => {
   assert.deepEqual(normalized, DEFAULT_AVATAR);
   assert.notEqual(normalized.ownedItems, DEFAULT_AVATAR.ownedItems);
 });
+
+test("every avatar item has a renderable style key and coordinated set", () => {
+  const sets = new Set(["everyday", "sport", "street", "hero"]);
+  for (const item of AVATAR_ITEMS) {
+    assert.equal(typeof item.styleKey, "string");
+    assert.ok(item.styleKey.length > 0);
+    assert.ok(sets.has(item.setId));
+    assert.ok([1, 2, 3, 4].includes(item.tier));
+  }
+});
+
+test("legacy equipped ids still normalize unchanged", () => {
+  const legacy = {
+    ownedItems: ["hair-crown", "top-hero", "bottom-gold", "shoes-rocket"],
+    equipped: { hair: "hair-crown", top: "top-hero", bottom: "bottom-gold", shoes: "shoes-rocket" },
+  };
+  assert.deepEqual(normalizeAvatarState(legacy).equipped, legacy.equipped);
+});
+
+test("premium items have premium visual tiers", () => {
+  for (const item of AVATAR_ITEMS.filter((entry) => entry.price >= 900)) {
+    assert.ok(item.tier >= 3);
+  }
+});
