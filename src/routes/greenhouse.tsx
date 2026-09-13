@@ -46,7 +46,7 @@ function Greenhouse() {
       setMessage(`💧 철푸덕! ${crop.name}에게 물을 줬어요.`);
       return;
     }
-    const result = harvest(index);
+    const result = harvest(index) as { name: string; amount: number; gold: boolean } | null;
     if (result) {
       setMessage(
         result.gold

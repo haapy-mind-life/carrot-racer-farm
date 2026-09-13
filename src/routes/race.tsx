@@ -38,10 +38,11 @@ function Race() {
       Array.from({ length: LANES }, () => ({ type: null })),
     );
     for (let r = 0; r < ROWS - 2; r++) {
+      const row = cells[r]!;
       const rockLane = Math.floor(Math.random() * LANES);
-      cells[r][rockLane] = { type: "rock" };
+      row[rockLane] = { type: "rock" };
       for (let l = 0; l < LANES; l++) {
-        if (l !== rockLane && Math.random() < 0.5) cells[r][l] = { type: "coin" };
+        if (l !== rockLane && Math.random() < 0.5) row[l] = { type: "coin" };
       }
     }
     setGrid(cells);
