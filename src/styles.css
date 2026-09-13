@@ -4,6 +4,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
 @theme inline {
   --font-display: var(--font-display);
   --font-body: var(--font-body);
@@ -143,37 +157,5 @@
   h3,
   button {
     font-family: var(--font-display);
-  }
-}
-
-.game-surface {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-.game-surface button,
-.game-surface [role="button"] {
-  touch-action: manipulation;
-}
-
-.game-surface img,
-.game-surface svg {
-  -webkit-user-drag: none;
-}
-
-.town-avatar--walking {
-  animation: town-step 0.28s ease-in-out infinite alternate;
-}
-
-@keyframes town-step {
-  from { transform: translate(-50%, -50%) translateY(0); }
-  to { transform: translate(-50%, -50%) translateY(-5px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .town-avatar {
-    transition-duration: 1ms !important;
-    animation: none !important;
   }
 }

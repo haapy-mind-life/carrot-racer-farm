@@ -1,11 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  createDefaultAvatar,
-  normalizeAvatarState,
-  buyAvatarItem as purchaseAvatarItem,
-  equipAvatarItem as applyAvatarEquip,
-  type AvatarState,
-} from "@/lib/avatar-system";
 
 export type CropId = "radish" | "beet" | "lettuce" | "carrot" | "sunflower";
 
@@ -22,11 +15,61 @@ export type Crop = {
 };
 
 export const CROPS: Crop[] = [
-  { id: "radish", name: "무", goldName: "황금 무", emoji: "🥬", goldEmoji: "✨🥬", seedCost: 10, sellPrice: 30, goldSellPrice: 300, waterNeeded: 2 },
-  { id: "beet", name: "사탕무", goldName: "황금 사탕무", emoji: "🍠", goldEmoji: "✨🍠", seedCost: 100, sellPrice: 260, goldSellPrice: 2600, waterNeeded: 3 },
-  { id: "lettuce", name: "양상추", goldName: "황금 양상추", emoji: "🥗", goldEmoji: "✨🥗", seedCost: 300, sellPrice: 800, goldSellPrice: 8000, waterNeeded: 4 },
-  { id: "carrot", name: "당근", goldName: "황금 당근", emoji: "🥕", goldEmoji: "✨🥕", seedCost: 1000, sellPrice: 2800, goldSellPrice: 28000, waterNeeded: 5 },
-  { id: "sunflower", name: "해바라기", goldName: "황금 해바라기", emoji: "🌻", goldEmoji: "✨🌻", seedCost: 10000, sellPrice: 30000, goldSellPrice: 300000, waterNeeded: 6 },
+  {
+    id: "radish",
+    name: "무",
+    goldName: "황금 무",
+    emoji: "🥬",
+    goldEmoji: "✨🥬",
+    seedCost: 10,
+    sellPrice: 30,
+    goldSellPrice: 300,
+    waterNeeded: 2,
+  },
+  {
+    id: "beet",
+    name: "사탕무",
+    goldName: "황금 사탕무",
+    emoji: "🍠",
+    goldEmoji: "✨🍠",
+    seedCost: 100,
+    sellPrice: 260,
+    goldSellPrice: 2600,
+    waterNeeded: 3,
+  },
+  {
+    id: "lettuce",
+    name: "양상추",
+    goldName: "황금 양상추",
+    emoji: "🥗",
+    goldEmoji: "✨🥗",
+    seedCost: 300,
+    sellPrice: 800,
+    goldSellPrice: 8000,
+    waterNeeded: 4,
+  },
+  {
+    id: "carrot",
+    name: "당근",
+    goldName: "황금 당근",
+    emoji: "🥕",
+    goldEmoji: "✨🥕",
+    seedCost: 1000,
+    sellPrice: 2800,
+    goldSellPrice: 28000,
+    waterNeeded: 5,
+  },
+  {
+    id: "sunflower",
+    name: "해바라기",
+    goldName: "황금 해바라기",
+    emoji: "🌻",
+    goldEmoji: "✨🌻",
+    seedCost: 10000,
+    sellPrice: 30000,
+    goldSellPrice: 300000,
+    waterNeeded: 6,
+  },
 ];
 
 export const cropById = (id: CropId) => CROPS.find((c) => c.id === id)!;
@@ -46,7 +89,6 @@ export type GameState = {
   plots: Plot[];
   hasTicket: boolean;
   bestRun: number;
-  avatar: AvatarState;
 };
 
 const STORAGE_KEY = "hyunjun-game-v1";
@@ -54,21 +96,18 @@ const STORAGE_KEY = "hyunjun-game-v1";
 const emptyPlots = (): Plot[] =>
   Array.from({ length: PLOT_COUNT }, () => ({ crop: null, water: 0, gold: false }));
 
-const makeInitialState = (): GameState => ({
+const initialState: GameState = {
   money: 50,
   plots: emptyPlots(),
   hasTicket: false,
   bestRun: 0,
-  avatar: createDefaultAvatar(),
-});
-
-const initialState = makeInitialState();
+};
 
 function load(): GameState {
-  if (typeof window === "undefined") return makeInitialState();
+  if (typeof window === "undefined") return initialState;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return makeInitialState();
+    if (!raw) return initialState;
     const parsed = JSON.parse(raw) as Partial<GameState>;
     return {
       money: typeof parsed.money === "number" ? parsed.money : initialState.money,
@@ -78,10 +117,9 @@ function load(): GameState {
           : emptyPlots(),
       hasTicket: Boolean(parsed.hasTicket),
       bestRun: typeof parsed.bestRun === "number" ? parsed.bestRun : 0,
-      avatar: normalizeAvatarState(parsed.avatar),
     };
   } catch {
-    return makeInitialState();
+    return initialState;
   }
 }
 
@@ -169,35 +207,9 @@ export function useGame() {
     );
   }, []);
 
-  const buyAvatarItem = useCallback((itemId: string) => {
-    setState((s) => {
-      const result = purchaseAvatarItem(s.avatar, s.money, itemId);
-      return result.ok ? { ...s, money: result.money, avatar: result.avatar } : s;
-    });
-  }, []);
+  const reset = useCallback(() => setState(initialState), []);
 
-  const equipAvatarItem = useCallback((itemId: string) => {
-    setState((s) => {
-      const result = applyAvatarEquip(s.avatar, itemId);
-      return result.ok ? { ...s, avatar: result.avatar } : s;
-    });
-  }, []);
-
-  const reset = useCallback(() => setState(makeInitialState()), []);
-
-  return {
-    state,
-    ready,
-    addMoney,
-    recordRun,
-    plant,
-    water,
-    harvest,
-    buyTicket,
-    buyAvatarItem,
-    equipAvatarItem,
-    reset,
-  };
+  return { state, ready, addMoney, recordRun, plant, water, harvest, buyTicket, reset };
 }
 
 export const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;

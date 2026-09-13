@@ -1,246 +1,182 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { AvatarCharacter } from "@/components/AvatarCharacter";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HomeButton } from "@/components/HomeButton";
-import type { AvatarState } from "@/lib/avatar-system";
 import { useGame, won } from "@/lib/game-state";
-import {
-  RACE_FINISH_SCORE,
-  advanceRace,
-  createRaceState,
-  getRaceEvent,
-  getRaceStage,
-  type RacePower,
-  type TrackEvent,
-} from "@/lib/race-engine";
-import { getRaceScene } from "@/lib/race-scene";
 
 export const Route = createFileRoute("/race")({
   head: () => ({
     meta: [
       { title: "박현준 게임 — 레이싱" },
-      {
-        name: "description",
-        content: "꾸민 캐릭터로 화면을 탭하며 네 개의 스테이지를 달리고 사다리와 크레인을 움직이는 레이싱 게임.",
-      },
+      { name: "description", content: "장애물을 피하고 코인을 먹어 돈을 버는 레이싱." },
+      { property: "og:title", content: "박현준 게임 — 레이싱" },
+      { property: "og:description", content: "장애물을 피하고 코인을 먹어 돈을 버는 레이싱." },
     ],
   }),
-  component: RacePage,
+  component: Race,
 });
 
-const eventView: Record<TrackEvent, { emoji: string; label: string }> = {
-  coin: { emoji: "🪙", label: "코인" },
-  obstacle: { emoji: "🪨", label: "장애물" },
-  "invincible-item": { emoji: "⭐", label: "무적 아이템" },
-  "flying-item": { emoji: "🪽", label: "날기 아이템" },
-};
+const LANES = 3;
+const ROWS = 12;
 
-const powerView: Record<RacePower, { emoji: string; label: string }> = {
-  normal: { emoji: "🏃", label: "달리는 중" },
-  invincible: { emoji: "🌟", label: "무적 변신" },
-  flying: { emoji: "🪽", label: "날기 변신" },
-};
+type Cell = { type: "coin" | "rock" | null };
 
-function StageScene({
-  stageId,
-  step,
-  power,
-  equipped,
-}: {
-  stageId: 1 | 2 | 3 | 4;
-  step: number;
-  power: RacePower;
-  equipped: AvatarState["equipped"];
-}) {
-  const scene = getRaceScene(stageId, step, power);
+type Phase = "idle" | "run" | "done";
 
-  return (
-    <div className="relative h-52 w-full overflow-hidden rounded-3xl border-2 border-border bg-[linear-gradient(to_bottom,var(--color-sky),var(--color-card))] shadow-inner">
-      {scene.kind === "field" && (
-        <>
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-secondary" />
-          <div className="absolute bottom-7 left-[12%] text-4xl">🥕</div>
-          <div className="absolute bottom-5 left-[44%] text-4xl">🥕</div>
-          <div className="absolute bottom-8 right-[12%] text-4xl">🪙</div>
-        </>
-      )}
+function Race() {
+  const { recordRun } = useGame();
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [lane, setLane] = useState(1);
+  const [row, setRow] = useState(ROWS - 1);
+  const [grid, setGrid] = useState<Cell[][]>([]);
+  const [earned, setEarned] = useState(0);
 
-      {scene.kind === "ladder" && (
-        <>
-          <div className="absolute bottom-3 left-1/2 h-44 w-20 -translate-x-1/2 rounded-lg border-x-8 border-amber-700 bg-[repeating-linear-gradient(to_bottom,transparent_0px,transparent_14px,#a16207_14px,#a16207_20px)]" />
-          <div className="absolute left-1/2 top-3 -translate-x-1/2 text-5xl">🪙</div>
-        </>
-      )}
+  const stateRef = useRef({ lane, row, grid, phase });
+  stateRef.current = { lane, row, grid, phase };
 
-      {scene.kind === "crane" && (
-        <>
-          <div className="absolute left-5 top-4 text-6xl">🏗️</div>
-          <div
-            className="absolute top-0 w-1 bg-foreground/40 transition-all duration-300"
-            style={{ left: `${scene.hookX}%`, height: `${scene.hookY}%` }}
-          />
-          <div
-            className="absolute text-4xl transition-all duration-300"
-            style={{ left: `calc(${scene.hookX}% - 18px)`, top: `${scene.hookY}%` }}
-          >
-            🪝
-          </div>
-          {scene.cargoEmoji && (
-            <div
-              className="absolute text-5xl transition-all duration-300"
-              style={{ left: `calc(${scene.hookX}% - 22px)`, top: `calc(${scene.hookY}% + 28px)` }}
-            >
-              {scene.cargoEmoji}
-            </div>
-          )}
-          <div className="absolute bottom-4 right-5 text-4xl">🪙</div>
-        </>
-      )}
+  const start = useCallback(() => {
+    const cells: Cell[][] = Array.from({ length: ROWS }, () =>
+      Array.from({ length: LANES }, () => ({ type: null })),
+    );
+    for (let r = 0; r < ROWS - 2; r++) {
+      const row = cells[r]!;
+      const rockLane = Math.floor(Math.random() * LANES);
+      row[rockLane] = { type: "rock" };
+      for (let l = 0; l < LANES; l++) {
+        if (l !== rockLane && Math.random() < 0.5) row[l] = { type: "coin" };
+      }
+    }
+    setGrid(cells);
+    setLane(1);
+    setRow(ROWS - 1);
+    setEarned(0);
+    setPhase("run");
+  }, []);
 
-      {scene.kind === "sky" && (
-        <>
-          <div className="absolute left-[8%] top-[24%] text-5xl">☁️</div>
-          <div className="absolute right-[8%] top-[15%] text-5xl">☁️</div>
-          <div className="absolute left-[55%] bottom-[8%] text-5xl">☁️</div>
-          <div className="absolute right-[26%] top-[46%] text-4xl">🪙</div>
-        </>
-      )}
+  const move = useCallback((dir: -1 | 1) => {
+    setLane((l) => Math.min(LANES - 1, Math.max(0, l + dir)));
+  }, []);
 
-      <div
-        className="absolute transition-all duration-300 ease-out"
-        style={{
-          left: `calc(${scene.runnerX}% - 32px)`,
-          top: `calc(${scene.runnerY}% - 38px)`,
-          transform: power === "invincible" ? "scale(1.08) rotate(-3deg)" : "scale(1)",
-        }}
-      >
-        <AvatarCharacter equipped={equipped} size="sm" power={power} />
-      </div>
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" || e.key === "a") move(-1);
+      if (e.key === "ArrowRight" || e.key === "d") move(1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [move]);
 
-      <div className="absolute inset-x-3 bottom-2 rounded-full bg-card/90 px-3 py-1 text-base shadow-sm">
-        {scene.caption}
-      </div>
-    </div>
-  );
-}
+  useEffect(() => {
+    if (phase !== "run") return;
+    const timer = window.setInterval(() => {
+      const s = stateRef.current;
+      if (s.phase !== "run") return;
+      const nextRow = s.row - 1;
+      if (nextRow < 0) {
+        setPhase("done");
+        return;
+      }
+      const cell = s.grid[nextRow]?.[s.lane];
+      if (cell?.type === "rock") {
+        setRow(nextRow);
+        setPhase("done");
+        return;
+      }
+      if (cell?.type === "coin") {
+        setEarned((v) => v + 10);
+      }
+      setRow(nextRow);
+    }, 700);
+    return () => window.clearInterval(timer);
+  }, [phase]);
 
-function RacePage() {
-  const { state: game, ready, recordRun } = useGame();
-  const [race, setRace] = useState(createRaceState);
-  const stage = getRaceStage(race.score);
-  const progress = Math.min(100, Math.round((race.score / RACE_FINISH_SCORE) * 100));
-  const upcoming = race.finished ? null : getRaceEvent(race.step + 1);
-
-  const handleTap = () => {
-    if (race.finished) return;
-    const next = advanceRace(race);
-    setRace(next);
-    if (next.finished && !race.finished) recordRun(next.money);
-  };
+  const finished = phase === "done";
+  const paidRef = useRef(false);
+  useEffect(() => {
+    if (finished && !paidRef.current) {
+      paidRef.current = true;
+      if (earned > 0) recordRun(earned);
+    }
+    if (!finished) paidRef.current = false;
+  }, [finished, earned, recordRun]);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,var(--color-sky),transparent_55%)] px-4 py-6">
-      <div className="mx-auto flex max-w-3xl flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_80%_-10%,var(--color-secondary),transparent_55%)] px-4 py-10">
+      <div className="mx-auto flex max-w-xl flex-col gap-6">
+        <div className="flex items-center justify-between">
           <HomeButton />
-          <div className="rounded-full bg-card px-5 py-2 text-lg shadow-sm">
-            내 돈 {ready ? won(game.money) : "…"}
-          </div>
+          <p className="rounded-full bg-card px-4 py-1 text-lg shadow-sm">
+            🪙 {won(earned)}
+          </p>
         </div>
 
-        <header className="text-center">
-          <p className="text-lg text-muted-foreground">화면 하나만 눌러서 놀아요</p>
-          <h1 className="text-4xl text-foreground">{stage.emoji} {stage.name}</h1>
-        </header>
+        <h1 className="text-center text-4xl">🏃 레이싱</h1>
+        <p className="text-center text-muted-foreground">
+          좌우로 움직여 바위를 피하고 코인을 먹어요. 끝까지 가면 코인이 돈이 됩니다!
+        </p>
 
-        <section className="rounded-4xl border-2 border-border bg-card p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-4 text-lg">
-            <span>점수 {race.score} / {RACE_FINISH_SCORE}</span>
-            <span>이번 판 {won(race.money)}</span>
-          </div>
-          <div className="mt-3 h-5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </section>
-
-        <button
-          type="button"
-          onClick={handleTap}
-          disabled={race.finished}
-          className="min-h-[500px] w-full rounded-4xl border-2 border-border bg-card p-5 text-center shadow-lg transition-transform enabled:active:scale-[0.99] disabled:cursor-default"
-          aria-label={race.finished ? "레이스 완주" : "레이스 화면 탭하기"}
-        >
-          <div className="mx-auto flex min-h-[450px] flex-col items-center justify-between gap-4">
-            <StageScene
-              stageId={stage.id}
-              step={race.step}
-              power={race.power}
-              equipped={game.avatar.equipped}
-            />
-
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <span className="rounded-full bg-secondary px-4 py-2 text-lg">
-                {powerView[race.power].emoji} {powerView[race.power].label}
-              </span>
-              {race.power !== "normal" && (
-                <span className="rounded-full bg-muted px-4 py-2 text-base">
-                  남은 변신 {race.powerSteps}번
-                </span>
-              )}
+        <div className="mx-auto grid w-full max-w-xs gap-2 rounded-4xl border-2 border-border bg-card p-4 shadow-sm">
+          {grid.map((rowCells, r) => (
+            <div key={r} className="grid grid-cols-3 gap-2">
+              {rowCells.map((cell, l) => {
+                const isPlayer = r === row && l === lane;
+                return (
+                  <div
+                    key={l}
+                    className={`flex h-11 items-center justify-center rounded-2xl text-2xl ${
+                      isPlayer ? "bg-secondary" : "bg-muted"
+                    }`}
+                  >
+                    {isPlayer ? "🏃" : cell.type === "rock" ? "🪨" : cell.type === "coin" ? "🪙" : ""}
+                  </div>
+                );
+              })}
             </div>
+          ))}
+        </div>
 
-            <div className="rounded-3xl bg-muted/70 px-5 py-3">
-              <p className="text-xl">{race.message}</p>
-            </div>
-
-            {race.finished ? (
-              <div>
-                <div className="text-6xl" aria-hidden="true">🏁🎉</div>
-                <p className="mt-2 text-3xl">완주 성공!</p>
-                <p className="mt-1 text-lg text-muted-foreground">{won(race.money)}을 집에 가져갑니다.</p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm text-muted-foreground">다음</p>
-                <div className="mt-1 text-5xl" aria-hidden="true">{eventView[upcoming!].emoji}</div>
-                <p className="text-lg">{eventView[upcoming!].label}</p>
-                <p className="mt-2 rounded-full bg-accent px-8 py-3 text-2xl text-accent-foreground">
-                  화면을 탭!
-                </p>
-              </div>
-            )}
+        {phase === "run" && (
+          <div className="mx-auto flex gap-4">
+            <button
+              onClick={() => move(-1)}
+              aria-label="왼쪽으로"
+              className="h-16 w-16 rounded-full border-2 border-border bg-card text-3xl shadow-sm active:translate-y-0.5"
+            >
+              ⬅️
+            </button>
+            <button
+              onClick={() => move(1)}
+              aria-label="오른쪽으로"
+              className="h-16 w-16 rounded-full border-2 border-border bg-card text-3xl shadow-sm active:translate-y-0.5"
+            >
+              ➡️
+            </button>
           </div>
-        </button>
+        )}
 
-        {race.finished && (
+        {phase === "idle" && (
           <button
-            type="button"
-            onClick={() => setRace(createRaceState())}
-            className="w-full rounded-full bg-accent px-6 py-4 text-2xl text-accent-foreground shadow-sm"
+            onClick={start}
+            className="mx-auto rounded-full bg-primary px-10 py-4 text-2xl text-primary-foreground shadow-sm transition-transform hover:-translate-y-0.5"
           >
-            🔁 한 번 더 달리기
+            출발! 🚩
           </button>
         )}
 
-        <section className="grid grid-cols-4 gap-2 text-center text-sm sm:text-base">
-          {[
-            ["🥕", "당근 들판"],
-            ["🪜", "사다리 언덕"],
-            ["🏗️", "크레인"],
-            ["☁️", "하늘 정원"],
-          ].map(([emoji, name], index) => (
-            <div
-              key={name}
-              className={`rounded-2xl border p-2 ${stage.id === index + 1 ? "bg-secondary" : "bg-card"}`}
-            >
-              <div className="text-2xl">{emoji}</div>
-              <div>{name}</div>
+        {finished && (
+          <div className="mx-auto flex flex-col items-center gap-4 rounded-4xl border-2 border-border bg-card p-6 text-center shadow-sm">
+            <p className="text-3xl">
+              {earned > 0 ? `🪙 ${won(earned)} 벌었어요!` : "앗, 바위에 부딪혔어요!"}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={start}
+                className="rounded-full bg-primary px-8 py-3 text-xl text-primary-foreground shadow-sm transition-transform hover:-translate-y-0.5"
+              >
+                다시 달리기
+              </button>
             </div>
-          ))}
-        </section>
+          </div>
+        )}
       </div>
     </main>
   );
