@@ -1,0 +1,47 @@
+name: Hyunjun Format and Verify
+
+on:
+  push:
+    branches: ["feat/hyunjun-integrated-game"]
+
+permissions:
+  contents: write
+
+jobs:
+  format-and-verify:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/hyunjun-integrated-game
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Format integration files
+        run: >-
+          npx prettier --write
+          package.json
+          src/lib/world-model.ts src/lib/world-store.ts src/lib/game-state.ts
+          src/lib/world-model.test.ts src/lib/world-store.test.ts
+          src/game/types.ts src/game/progression.ts src/game/runner-engine.ts src/game/runner-render.ts
+          src/game/progression.test.ts src/game/runner-engine.test.ts
+          src/components/hyunjun/Art.tsx src/components/hyunjun/Shell.tsx src/components/hyunjun/Village.tsx
+          src/components/hyunjun/Farm.tsx src/components/hyunjun/House.tsx src/components/hyunjun/Runner.tsx
+          src/routes/__root.tsx src/routes/index.tsx src/routes/race.tsx src/routes/greenhouse.tsx src/routes/house.tsx
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package.json src/lib src/game src/components/hyunjun src/routes
+            git commit -m "style: format Hyunjun integration"
+            git push origin HEAD:feat/hyunjun-integrated-game
+          fi
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
