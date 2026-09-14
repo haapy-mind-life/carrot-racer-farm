@@ -1,1 +1,6 @@
-import{createFileRoute}from"@tanstack/react-router";import{House}from"@/components/hyunjun/House";export const Route=createFileRoute("/house")({head:()=>({meta:[{title:"포근한 우리 집 · 박현준 게임"}]}),component:House});
+import { createFileRoute } from "@tanstack/react-router";
+import { House } from "@/components/hyunjun/House";
+export const Route = createFileRoute("/house")({
+  head: () => ({ meta: [{ title: "포근한 우리 집 · 박현준 게임" }] }),
+  component: House,
+});
