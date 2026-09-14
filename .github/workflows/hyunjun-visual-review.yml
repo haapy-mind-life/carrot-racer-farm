@@ -1,0 +1,49 @@
+name: Hyunjun Visual Review
+
+on:
+  push:
+    branches: ["feat/hyunjun-integrated-game"]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: home
+            path: /
+          - name: runner
+            path: /race
+          - name: farm
+            path: /greenhouse
+          - name: house
+            path: /house
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: npm run build
+      - name: Start preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/hyunjun-preview.log 2>&1 &
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173${{ matrix.path }} >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/hyunjun-preview.log
+          exit 1
+      - name: Capture mobile screenshot
+        run: |
+          google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=/tmp/${{ matrix.name }}.png http://127.0.0.1:4173${{ matrix.path }}
+          echo "SCREENSHOT_${{ matrix.name }}_BEGIN"
+          base64 -w0 /tmp/${{ matrix.name }}.png
+          echo
+          echo "SCREENSHOT_${{ matrix.name }}_END"
