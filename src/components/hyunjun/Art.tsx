@@ -1,0 +1,74 @@
+import type { Outfit, FurnitureId, CropId } from "@/lib/world-model";
+const colors = { mint: "#7bb9a2", peach: "#e9a08d", lavender: "#a99dca" };
+export function Star() {
+  return <span aria-hidden="true">⭐</span>;
+}
+export function Mascot({ outfit = "mint", small = false }: { outfit?: Outfit; small?: boolean }) {
+  const c = colors[outfit];
+  return (
+    <svg
+      className={small ? "hj-mascot small" : "hj-mascot"}
+      viewBox="0 0 120 145"
+      aria-hidden="true"
+    >
+      <ellipse cx="60" cy="136" rx="34" ry="6" fill="#40564d22" />
+      <circle cx="31" cy="28" r="16" fill={c} />
+      <circle cx="89" cy="28" r="16" fill={c} />
+      <rect x="18" y="20" width="84" height="77" rx="36" fill={c} />
+      <rect x="27" y="38" width="66" height="51" rx="25" fill="#ffe5c8" />
+      <path d="M41 57v5m38-5v5" stroke="#40564d" strokeWidth="4" strokeLinecap="round" />
+      <path
+        d="M52 72q8 8 16 0"
+        stroke="#8c5f52"
+        strokeWidth="3"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <ellipse cx="41" cy="68" rx="8" ry="5" fill="#efab9d" />
+      <ellipse cx="79" cy="68" rx="8" ry="5" fill="#efab9d" />
+      <rect x="38" y="88" width="44" height="38" rx="14" fill={c} />
+      <path d="M43 116v15m34-15v15" stroke="#748699" strokeWidth="14" strokeLinecap="round" />
+      <path d="M35 133h20m10 0h20" stroke="#fff6df" strokeWidth="10" strokeLinecap="round" />
+      <path d="m60 96 4 7 8 1-6 6 2 8-8-4-8 4 2-8-6-6 8-1Z" fill="#fff0a9" />
+    </svg>
+  );
+}
+export function Building({ kind }: { kind: "home" | "run" | "farm" }) {
+  return (
+    <div className={`hj-building ${kind}`} aria-hidden="true">
+      <div className="roof" />
+      <div className="body">{kind === "home" ? "🏠" : kind === "run" ? "🏁" : "🌱"}</div>
+    </div>
+  );
+}
+export function CropArt({ id, grown = false }: { id: CropId; grown?: boolean }) {
+  const e: Record<CropId, string> = {
+    radish: "🌱",
+    beet: "💗",
+    lettuce: "🥬",
+    carrot: "🥕",
+    sunflower: "🌻",
+  };
+  return (
+    <span className={grown ? "hj-crop grown" : "hj-crop"} aria-hidden="true">
+      {grown ? e[id] : "🌱"}
+    </span>
+  );
+}
+export function FurnitureArt({ id }: { id: FurnitureId }) {
+  const e: Record<FurnitureId, string> = {
+    bed: "🛏️",
+    rug: "🌼",
+    plant: "🪴",
+    sofa: "🛋️",
+    lamp: "💡",
+    shelf: "📚",
+    teddy: "🧸",
+    window: "🌈",
+  };
+  return (
+    <span className="hj-furniture-art" aria-hidden="true">
+      {e[id]}
+    </span>
+  );
+}

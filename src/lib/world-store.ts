@@ -1,0 +1,71 @@
+import { migrateSave, reduceWorld, type WorldAction } from "./world-model.ts";
+export type StorageLike = {
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+};
+const KEY = "hyunjun-game-v2",
+  LEGACY = "hyunjun-game-v1";
+export function createWorldStore(getStorage: () => StorageLike) {
+  const server = { state: migrateSave(null), ready: false, storageWarning: false };
+  let snapshot = server,
+    initialized = false;
+  let storage: StorageLike | undefined;
+  const listeners = new Set<() => void>();
+  function initialize() {
+    if (initialized) return;
+    initialized = true;
+    let raw: unknown = null,
+      warning = false;
+    try {
+      storage = getStorage();
+      const saved = storage.getItem(KEY) ?? storage.getItem(LEGACY);
+      if (saved) {
+        try {
+          raw = JSON.parse(saved);
+        } catch {
+          warning = true;
+          try {
+            storage.setItem(`${KEY}-recovery`, saved);
+          } catch {
+            /* recovery copy is best-effort */
+          }
+        }
+      }
+    } catch {
+      warning = true;
+    }
+    const state = migrateSave(raw);
+    try {
+      const legacyBest = Number(storage?.getItem("runner-best") ?? 0);
+      if (Number.isFinite(legacyBest) && legacyBest >= 0)
+        state.runnerBest = Math.max(state.runnerBest, Math.min(1000, Math.floor(legacyBest)));
+    } catch {
+      warning = true;
+    }
+    snapshot = { state, ready: true, storageWarning: warning };
+  }
+  return {
+    getSnapshot: () => snapshot,
+    getServerSnapshot: () => server,
+    subscribe: (listener: () => void) => {
+      initialize();
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    dispatch: (action: WorldAction) => {
+      initialize();
+      const next = reduceWorld(snapshot.state, action);
+      if (next === snapshot.state) return next;
+      let warning = snapshot.storageWarning;
+      try {
+        if (!storage) throw new Error();
+        storage.setItem(KEY, JSON.stringify(next));
+      } catch {
+        warning = true;
+      }
+      snapshot = { state: next, ready: true, storageWarning: warning };
+      listeners.forEach((fn) => fn());
+      return next;
+    },
+  };
+}
