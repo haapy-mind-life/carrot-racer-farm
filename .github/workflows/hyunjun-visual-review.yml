@@ -5,25 +5,16 @@ on:
     branches: ["feat/hyunjun-integrated-game"]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   capture:
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: home
-            path: /
-          - name: runner
-            path: /race
-          - name: farm
-            path: /greenhouse
-          - name: house
-            path: /house
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/hyunjun-integrated-game
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -32,28 +23,30 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: npm run build
-      - name: Start development server for visual review
+      - name: Start development server
         run: |
           npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/hyunjun-dev.log 2>&1 &
           for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:4173${{ matrix.path }} >/dev/null; then exit 0; fi
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/hyunjun-dev.log
           exit 1
-      - name: Capture mobile screenshot
+      - name: Capture four mobile screens
         run: |
-          google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=/tmp/${{ matrix.name }}.png http://127.0.0.1:4173${{ matrix.path }}
-          if command -v convert >/dev/null 2>&1; then
-            convert /tmp/${{ matrix.name }}.png -resize 195x422 -quality 35 /tmp/${{ matrix.name }}.jpg
-            echo "SCREENSHOT_${{ matrix.name }}_BEGIN"
-            base64 -w0 /tmp/${{ matrix.name }}.jpg
-            echo
-            echo "SCREENSHOT_${{ matrix.name }}_END"
-          else
-            echo "Screenshot captured: $(stat -c%s /tmp/${{ matrix.name }}.png) bytes"
-          fi
-      - name: Check horizontal overflow
+          mkdir -p docs/visual-review
+          google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=docs/visual-review/home.png http://127.0.0.1:4173/
+          google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=docs/visual-review/runner.png http://127.0.0.1:4173/race
+          google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=docs/visual-review/farm.png http://127.0.0.1:4173/greenhouse
+          google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=docs/visual-review/house.png http://127.0.0.1:4173/house
+          test -s docs/visual-review/home.png
+          test -s docs/visual-review/runner.png
+          test -s docs/visual-review/farm.png
+          test -s docs/visual-review/house.png
+      - name: Commit temporary review images
         run: |
-          google-chrome --headless=new --no-sandbox --dump-dom --window-size=390,844 http://127.0.0.1:4173${{ matrix.path }} >/tmp/${{ matrix.name }}.html
-          grep -q "박현준" /tmp/${{ matrix.name }}.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/visual-review
+          git commit -m "test: capture temporary Hyunjun mobile screens"
+          git push origin HEAD:feat/hyunjun-integrated-game
