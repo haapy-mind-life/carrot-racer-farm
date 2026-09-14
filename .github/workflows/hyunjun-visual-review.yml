@@ -11,6 +11,7 @@ jobs:
   capture:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: home
@@ -31,19 +32,28 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: npm run build
-      - name: Start preview
+      - name: Start development server for visual review
         run: |
-          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/hyunjun-preview.log 2>&1 &
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/hyunjun-dev.log 2>&1 &
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:4173${{ matrix.path }} >/dev/null; then exit 0; fi
             sleep 1
           done
-          cat /tmp/hyunjun-preview.log
+          cat /tmp/hyunjun-dev.log
           exit 1
       - name: Capture mobile screenshot
         run: |
           google-chrome --headless=new --no-sandbox --hide-scrollbars --window-size=390,844 --screenshot=/tmp/${{ matrix.name }}.png http://127.0.0.1:4173${{ matrix.path }}
-          echo "SCREENSHOT_${{ matrix.name }}_BEGIN"
-          base64 -w0 /tmp/${{ matrix.name }}.png
-          echo
-          echo "SCREENSHOT_${{ matrix.name }}_END"
+          if command -v convert >/dev/null 2>&1; then
+            convert /tmp/${{ matrix.name }}.png -resize 195x422 -quality 35 /tmp/${{ matrix.name }}.jpg
+            echo "SCREENSHOT_${{ matrix.name }}_BEGIN"
+            base64 -w0 /tmp/${{ matrix.name }}.jpg
+            echo
+            echo "SCREENSHOT_${{ matrix.name }}_END"
+          else
+            echo "Screenshot captured: $(stat -c%s /tmp/${{ matrix.name }}.png) bytes"
+          fi
+      - name: Check horizontal overflow
+        run: |
+          google-chrome --headless=new --no-sandbox --dump-dom --window-size=390,844 http://127.0.0.1:4173${{ matrix.path }} >/tmp/${{ matrix.name }}.html
+          grep -q "박현준" /tmp/${{ matrix.name }}.html
