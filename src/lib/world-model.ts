@@ -88,6 +88,8 @@ export type GameState = {
   friendship: Record<FriendId, number>;
   animals: Record<AnimalId, AnimalState>;
   settledRuns: string[];
+  miniBest: Record<"treasure" | "stars" | "fishing", number>;
+  settledMinis: string[];
 };
 export const PLOT_COUNT = 6;
 export const TICKET_PRICE = 50000;
@@ -105,16 +107,18 @@ const object = (v: unknown): Record<string, unknown> =>
 const emptyPlot = (): Plot => ({ crop: null, water: 0, gold: false });
 export function migrateSave(input: unknown): GameState {
   const raw = object(input),
-    oldPlots = Array.isArray(raw.plots) ? raw.plots : [];
+    oldPlots = Array.isArray(raw["plots"]) ? raw["plots"] : [];
   const starter: FurnitureId[] = ["bed", "rug", "plant"];
   const owned = [
     ...new Set([
       ...starter,
-      ...(Array.isArray(raw.ownedFurniture) ? raw.ownedFurniture.filter(knownFurniture) : []),
+      ...(Array.isArray(raw["ownedFurniture"]) ? raw["ownedFurniture"].filter(knownFurniture) : []),
     ]),
   ];
   const placed = new Set<FurnitureId>();
-  const sourceRoom = Array.isArray(raw.room) ? raw.room : ["bed", null, "plant", null, "rug", null];
+  const sourceRoom = Array.isArray(raw["room"])
+    ? raw["room"]
+    : ["bed", null, "plant", null, "rug", null];
   const room = Array.from({ length: 6 }, (_, i) => {
     const item = sourceRoom[i];
     if (!knownFurniture(item) || !owned.includes(item) || placed.has(item)) return null;
@@ -122,41 +126,57 @@ export function migrateSave(input: unknown): GameState {
     return item;
   });
   return {
+    miniBest: {
+      treasure: finite(object(raw["miniBest"])["treasure"], 0, 6),
+      stars: finite(object(raw["miniBest"])["stars"], 0, 18),
+      fishing: finite(object(raw["miniBest"])["fishing"], 0, 5),
+    },
+    settledMinis: Array.isArray(raw["settledMinis"])
+      ? raw["settledMinis"]
+          .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 160)
+          .slice(-50)
+      : [],
     version: 2,
-    money: finite(raw.money, 50),
+    money: finite(raw["money"], 50),
     plots: Array.from({ length: PLOT_COUNT }, (_, i) => {
       const p = object(oldPlots[i]);
-      if (!knownCrop(p.crop)) return emptyPlot();
-      const crop = cropById(p.crop);
-      return { crop: p.crop, water: finite(p.water, 0, crop.waterNeeded), gold: p.gold === true };
+      if (!knownCrop(p["crop"])) return emptyPlot();
+      const crop = cropById(p["crop"]);
+      return {
+        crop: p["crop"],
+        water: finite(p["water"], 0, crop.waterNeeded),
+        gold: p["gold"] === true,
+      };
     }),
-    hasTicket: raw.hasTicket === true,
-    bestRun: finite(raw.bestRun),
-    runnerBest: finite(raw.runnerBest, 0, 1000),
-    runs: finite(raw.runs),
-    harvests: finite(raw.harvests),
-    outfit: raw.outfit === "peach" || raw.outfit === "lavender" ? raw.outfit : "mint",
-    wallpaper: raw.wallpaper === "sky" || raw.wallpaper === "rose" ? raw.wallpaper : "cream",
+    hasTicket: raw["hasTicket"] === true,
+    bestRun: finite(raw["bestRun"]),
+    runnerBest: finite(raw["runnerBest"], 0, 1000),
+    runs: finite(raw["runs"]),
+    harvests: finite(raw["harvests"]),
+    outfit: raw["outfit"] === "peach" || raw["outfit"] === "lavender" ? raw["outfit"] : "mint",
+    wallpaper:
+      raw["wallpaper"] === "sky" || raw["wallpaper"] === "rose" ? raw["wallpaper"] : "cream",
     ownedFurniture: owned,
     room,
     friendship: {
-      toto: finite(object(raw.friendship).toto, 0, 3),
-      lulu: finite(object(raw.friendship).lulu, 0, 3),
+      toto: finite(object(raw["friendship"])["toto"], 0, 3),
+      lulu: finite(object(raw["friendship"])["lulu"], 0, 3),
     },
     animals: {
       bori: {
-        fullness: finite(object(object(raw.animals).bori).fullness, 2, 3),
-        friendship: finite(object(object(raw.animals).bori).friendship, 0, 3),
+        fullness: finite(object(object(raw["animals"])["bori"])["fullness"], 2, 3),
+        friendship: finite(object(object(raw["animals"])["bori"])["friendship"], 0, 3),
       },
     },
-    settledRuns: Array.isArray(raw.settledRuns)
-      ? raw.settledRuns
+    settledRuns: Array.isArray(raw["settledRuns"])
+      ? raw["settledRuns"]
           .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 160)
           .slice(-50)
       : [],
   };
 }
 export type WorldAction =
+  | { type: "settle-mini"; id: string; game: "treasure" | "stars" | "fishing"; score: number }
   | { type: "plant"; index: number; crop: CropId }
   | { type: "water" | "harvest"; index: number }
   | { type: "settle-run"; id: string; score: number; coins: number; clear: boolean }
@@ -167,11 +187,32 @@ export type WorldAction =
   | { type: "friend-play"; id: FriendId }
   | { type: "feed-animal"; id: AnimalId };
 export function reduceWorld(state: GameState, action: WorldAction): GameState {
+  if (action.type === "settle-mini") {
+    const limits = { treasure: 6, stars: 18, fishing: 5 };
+    if (
+      !Object.hasOwn(limits, action.game) ||
+      !action.id ||
+      action.id.length >= 160 ||
+      state.settledMinis.includes(action.id) ||
+      !Number.isFinite(action.score) ||
+      action.score < 0
+    )
+      return state;
+    const score = finite(action.score, 0, limits[action.game]);
+    const multiplier = action.game === "stars" ? 2 : 4;
+    return {
+      ...state,
+      money: Math.min(1e12, state.money + score * multiplier),
+      miniBest: { ...state.miniBest, [action.game]: Math.max(state.miniBest[action.game], score) },
+      settledMinis: [...state.settledMinis, action.id].slice(-50),
+    };
+  }
   if (action.type === "plant" || action.type === "water" || action.type === "harvest") {
     if (!Number.isInteger(action.index) || action.index < 0 || action.index >= PLOT_COUNT)
       return state;
     const plots = state.plots.slice(),
       plot = plots[action.index];
+    if (!plot) return state;
     if (action.type === "plant") {
       if (plot.crop || !knownCrop(action.crop)) return state;
       const crop = cropById(action.crop);
