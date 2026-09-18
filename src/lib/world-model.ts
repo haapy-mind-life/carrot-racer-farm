@@ -1,6 +1,9 @@
 export type CropId = "radish" | "beet" | "lettuce" | "carrot" | "sunflower";
 export type Outfit = "mint" | "peach" | "lavender";
 export type Wallpaper = "cream" | "sky" | "rose";
+export type FriendId = "toto" | "lulu";
+export type AnimalId = "bori";
+export type AnimalState = { fullness: number; friendship: number };
 export type Crop = {
   id: CropId;
   name: string;
@@ -82,6 +85,8 @@ export type GameState = {
   wallpaper: Wallpaper;
   ownedFurniture: FurnitureId[];
   room: (FurnitureId | null)[];
+  friendship: Record<FriendId, number>;
+  animals: Record<AnimalId, AnimalState>;
   settledRuns: string[];
 };
 export const PLOT_COUNT = 6;
@@ -134,6 +139,16 @@ export function migrateSave(input: unknown): GameState {
     wallpaper: raw.wallpaper === "sky" || raw.wallpaper === "rose" ? raw.wallpaper : "cream",
     ownedFurniture: owned,
     room,
+    friendship: {
+      toto: finite(object(raw.friendship).toto, 0, 3),
+      lulu: finite(object(raw.friendship).lulu, 0, 3),
+    },
+    animals: {
+      bori: {
+        fullness: finite(object(object(raw.animals).bori).fullness, 2, 3),
+        friendship: finite(object(object(raw.animals).bori).friendship, 0, 3),
+      },
+    },
     settledRuns: Array.isArray(raw.settledRuns)
       ? raw.settledRuns
           .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 160)
@@ -148,7 +163,9 @@ export type WorldAction =
   | { type: "buy-furniture"; id: FurnitureId }
   | { type: "place-furniture"; id: FurnitureId | null; slot: number }
   | { type: "outfit"; outfit: Outfit }
-  | { type: "wallpaper"; wallpaper: Wallpaper };
+  | { type: "wallpaper"; wallpaper: Wallpaper }
+  | { type: "friend-play"; id: FriendId }
+  | { type: "feed-animal"; id: AnimalId };
 export function reduceWorld(state: GameState, action: WorldAction): GameState {
   if (action.type === "plant" || action.type === "water" || action.type === "harvest") {
     if (!Number.isInteger(action.index) || action.index < 0 || action.index >= PLOT_COUNT)
@@ -200,6 +217,28 @@ export function reduceWorld(state: GameState, action: WorldAction): GameState {
       runnerBest: Math.max(state.runnerBest, score),
       runs: state.runs + 1,
       settledRuns: [...state.settledRuns, action.id].slice(-50),
+    };
+  }
+  if (action.type === "friend-play") {
+    const current = state.friendship[action.id];
+    if (current === undefined) return state;
+    return {
+      ...state,
+      friendship: { ...state.friendship, [action.id]: Math.min(3, current + 1) },
+    };
+  }
+  if (action.type === "feed-animal") {
+    const current = state.animals[action.id];
+    if (!current) return state;
+    return {
+      ...state,
+      animals: {
+        ...state.animals,
+        [action.id]: {
+          fullness: 3,
+          friendship: Math.min(3, current.friendship + 1),
+        },
+      },
     };
   }
   if (action.type === "buy-furniture") {
