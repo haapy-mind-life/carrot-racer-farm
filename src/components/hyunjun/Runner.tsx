@@ -63,10 +63,24 @@ export function Runner() {
     setReward(0);
     setV(view(run.current));
   }, [bank, mode]);
-  const tap = () => {
+  const tap = useCallback(() => {
     if (run.current!.phase === "ready") start();
     else tapRun(run.current!);
-  };
+  }, [start]);
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (
+        (event.code === "Space" || event.key.toLowerCase() === "e") &&
+        !event.repeat &&
+        !(event.target as HTMLElement).closest("button")
+      ) {
+        event.preventDefault();
+        tap();
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [tap]);
   useEffect(() => {
     const ctx = canvas.current?.getContext("2d");
     if (!ctx) return;
@@ -147,6 +161,12 @@ export function Runner() {
           className="hj-canvas"
           onPointerDown={(e) => {
             if (e.isPrimary) {
+              e.preventDefault();
+              tap();
+            }
+          }}
+          onKeyDown={(e) => {
+            if ((e.key === " " || e.key === "Enter") && !e.repeat) {
               e.preventDefault();
               tap();
             }

@@ -20,7 +20,7 @@ export function Shell({
       <div className="hj-container">
         <header className="hj-topbar">
           <Link to="/" className="hj-brand">
-            박현준 게임<small>친구와 동물이 사는 작은 월드</small>
+            박현준 게임<small>걸어서 만나는 모험 마을</small>
           </Link>
           <div className="hj-wallet">
             <Star />

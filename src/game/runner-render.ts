@@ -1,5 +1,7 @@
 import { GROUND, HEIGHT, PLAYER_X, WIDTH, type Run } from "./runner-engine";
 import type { Outfit } from "@/lib/world-model";
+import { characterUrl } from "./character-art";
+const portraits = new Map<Outfit, HTMLImageElement>();
 const colors = { mint: "#7bb9a2", peach: "#e9a08d", lavender: "#a99dca" };
 export function drawRunner(c: CanvasRenderingContext2D, r: Run, outfit: Outfit) {
   c.clearRect(0, 0, WIDTH, HEIGHT);
@@ -66,6 +68,17 @@ export function drawRunner(c: CanvasRenderingContext2D, r: Run, outfit: Outfit) 
   c.translate(PLAYER_X, r.y);
   const s = r.combat.giantTimer > 0 ? 1.25 : 1;
   c.scale(s, s);
+  let portrait = portraits.get(outfit);
+  if (!portrait) {
+    portrait = new Image();
+    portrait.src = characterUrl(outfit);
+    portraits.set(outfit, portrait);
+  }
+  if (portrait.complete && portrait.naturalWidth) {
+    c.drawImage(portrait, -42, -80, 84, 102);
+    c.restore();
+    return;
+  }
   c.fillStyle = colors[outfit];
   c.beginPath();
   c.arc(0, -62, 34, 0, Math.PI * 2);
