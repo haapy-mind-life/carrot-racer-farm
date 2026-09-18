@@ -21,9 +21,7 @@ export function Village() {
   const { state, dispatch, getState } = useGame();
   const nav = useNavigate();
   const [pos, setPos] = useState<Point>({ x: 50, y: 73 });
-  const [message, setMessage] = useState(
-    "A / D로 걸어봐. 친구와 동물 가까이에 가면 할 일이 보여!",
-  );
+  const [message, setMessage] = useState("A / D로 걸어봐. 친구와 동물 가까이에 가면 할 일이 보여!");
   const nearby = useMemo(() => nearbyEntity(pos), [pos]);
   const interaction = useMemo(
     () => (nearby ? interactionForEntity(nearby, state) : null),
@@ -102,9 +100,7 @@ export function Village() {
         {WORLD_ENTITIES.map((entity) => (
           <div
             key={entity.id}
-            className={`hj-world-entity ${entity.kind} ${
-              nearby?.id === entity.id ? "near" : ""
-            }`}
+            className={`hj-world-entity ${entity.kind} ${nearby?.id === entity.id ? "near" : ""}`}
             style={{ left: `${entity.x}%`, top: `${entity.y}%` }}
           >
             {entity.kind === "gate" && entity.id in gateArt ? (
