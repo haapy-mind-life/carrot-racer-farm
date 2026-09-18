@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useGame } from "@/lib/game-state";
 import { Star } from "./Art";
+
 export function Shell({
   title,
   subtitle,
@@ -19,7 +20,7 @@ export function Shell({
       <div className="hj-container">
         <header className="hj-topbar">
           <Link to="/" className="hj-brand">
-            박현준 게임<small>현준이의 작은 마을</small>
+            박현준 게임<small>친구와 동물이 사는 작은 월드</small>
           </Link>
           <div className="hj-wallet">
             <Star />
@@ -37,20 +38,11 @@ export function Shell({
           </p>
         )}
         {children}
-        <nav className="hj-dock" aria-label="놀이 선택">
-          <Link to="/" className={active === "home" ? "active" : ""}>
-            🏡<span>마을</span>
-          </Link>
-          <Link to="/race" className={active === "run" ? "active" : ""}>
-            🏃<span>달리기</span>
-          </Link>
-          <Link to="/greenhouse" className={active === "farm" ? "active" : ""}>
-            🌱<span>농장</span>
-          </Link>
-          <Link to="/house" className={active === "room" ? "active" : ""}>
-            🛏️<span>우리 집</span>
-          </Link>
-        </nav>
+        {active !== "home" && (
+          <nav className="hj-home-return" aria-label="마을로 돌아가기">
+            <Link to="/">🏡 마을로 돌아가기</Link>
+          </nav>
+        )}
       </div>
     </main>
   );
