@@ -21,7 +21,9 @@ export function Village() {
   const { state, dispatch, getState } = useGame();
   const nav = useNavigate();
   const [pos, setPos] = useState<Point>({ x: 50, y: 73 });
-  const [message, setMessage] = useState("A / D로 걸어봐. 친구와 동물 가까이에 가면 할 일이 보여!");
+  const [message, setMessage] = useState(
+    "A / D로 걸어봐. 친구와 동물 가까이에 가면 할 일이 보여!",
+  );
   const nearby = useMemo(() => nearbyEntity(pos), [pos]);
   const interaction = useMemo(
     () => (nearby ? interactionForEntity(nearby, state) : null),
@@ -82,21 +84,27 @@ export function Village() {
       subtitle="버튼을 고르는 대신 직접 걸어가서 친구와 놀고, 동물을 돌보고, 새로운 길을 찾아봐!"
     >
       <section className="hj-world" aria-label="박현준 월드">
-        <div className="hj-world-sky">☁️ <span>☀️</span> ☁️</div>
+        <div className="hj-world-sky">
+          ☁️ <span>☀️</span> ☁️
+        </div>
         <div className="hj-world-hill left" />
         <div className="hj-world-hill right" />
         <div className="hj-world-road main" />
         <div className="hj-world-road park" />
         <div className="hj-mini-park">
           <b>MINI PARK</b>
-          <span>🛝</span><span>⚽</span><span>🌳</span>
+          <span>🛝</span>
+          <span>⚽</span>
+          <span>🌳</span>
         </div>
         <div className="hj-pond">💧 🐸</div>
 
         {WORLD_ENTITIES.map((entity) => (
           <div
             key={entity.id}
-            className={`hj-world-entity ${entity.kind} ${nearby?.id === entity.id ? "near" : ""}`}
+            className={`hj-world-entity ${entity.kind} ${
+              nearby?.id === entity.id ? "near" : ""
+            }`}
             style={{ left: `${entity.x}%`, top: `${entity.y}%` }}
           >
             {entity.kind === "gate" && entity.id in gateArt ? (
@@ -105,9 +113,24 @@ export function Village() {
               <span className="hj-world-emoji">{entity.emoji}</span>
             )}
             <b>{entity.name}</b>
-            {entity.id === "toto" && <small>{"♥".repeat(state.friendship.toto)}{"♡".repeat(3 - state.friendship.toto)}</small>}
-            {entity.id === "lulu" && <small>{"♥".repeat(state.friendship.lulu)}{"♡".repeat(3 - state.friendship.lulu)}</small>}
-            {entity.id === "bori" && <small>배부름 {"●".repeat(state.animals.bori.fullness)}{"○".repeat(3 - state.animals.bori.fullness)}</small>}
+            {entity.id === "toto" && (
+              <small>
+                {"♥".repeat(state.friendship.toto)}
+                {"♡".repeat(3 - state.friendship.toto)}
+              </small>
+            )}
+            {entity.id === "lulu" && (
+              <small>
+                {"♥".repeat(state.friendship.lulu)}
+                {"♡".repeat(3 - state.friendship.lulu)}
+              </small>
+            )}
+            {entity.id === "bori" && (
+              <small>
+                배부름 {"●".repeat(state.animals.bori.fullness)}
+                {"○".repeat(3 - state.animals.bori.fullness)}
+              </small>
+            )}
           </div>
         ))}
 
@@ -125,16 +148,33 @@ export function Village() {
         <div className="hj-world-secret-note">🚧 아직 열리지 않은 길</div>
       </section>
 
-      <p className="hj-world-message" role="status">{message}</p>
+      <p className="hj-world-message" role="status">
+        {message}
+      </p>
 
       <div className="hj-world-controls" aria-label="이동 조작">
-        <button onClick={() => move(-1, 0)} aria-label="왼쪽">A<br /><span>←</span></button>
+        <button onClick={() => move(-1, 0)} aria-label="왼쪽">
+          A<br />
+          <span>←</span>
+        </button>
         <div>
-          <button onClick={() => move(0, -1)} aria-label="위">W<br /><span>↑</span></button>
-          <button onClick={() => move(0, 1)} aria-label="아래">S<br /><span>↓</span></button>
+          <button onClick={() => move(0, -1)} aria-label="위">
+            W<br />
+            <span>↑</span>
+          </button>
+          <button onClick={() => move(0, 1)} aria-label="아래">
+            S<br />
+            <span>↓</span>
+          </button>
         </div>
-        <button onClick={() => move(1, 0)} aria-label="오른쪽">D<br /><span>→</span></button>
-        <button className="action" disabled={!interaction} onClick={interact}>E<br /><span>행동</span></button>
+        <button onClick={() => move(1, 0)} aria-label="오른쪽">
+          D<br />
+          <span>→</span>
+        </button>
+        <button className="action" disabled={!interaction} onClick={interact}>
+          E<br />
+          <span>행동</span>
+        </button>
       </div>
     </Shell>
   );
