@@ -269,6 +269,7 @@ export function Village() {
   const interact = () => {
     if (!ready || mini || drawing || garageOpen) return;
     if (region !== "village") { doLifeAction(); return; }
+    if (!driving && nearSpot(pos, LIFE_SPOTS.villageGate, 205)) { travelTo("coast", LIFE_SPOTS.coastArrival); return; }
     if (call && callPhase === "dispatched" && nearTarget) {
       helpCall();
       return;
@@ -601,6 +602,7 @@ export function Village() {
             diving={diving}
             camping={camping}
           />
+          <div className="adv-gate" style={{ left: LIFE_SPOTS.villageGate.x, top: LIFE_SPOTS.villageGate.y }}><span>새로운 세계</span><b>🌊 큰 바다 · 대왕집</b><i /></div>
           {PORTALS.map((g) => (
             <div
               className={`adv-gate ${nearby?.id === g.id ? "near" : ""}`}
@@ -831,7 +833,7 @@ export function Village() {
                 {region === "village" ? "지도" : region === "coast" ? "큰 집" : "해변"}
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
-                {region !== "village" ? lifeActionLabel() : diving
+                {region !== "village" ? lifeActionLabel() : !driving && nearSpot(pos,LIFE_SPOTS.villageGate,205) ? "큰 바다 여행" : diving
                   ? "물 밖으로 나오기"
                   : call && callPhase === "dispatched" && nearTarget
                     ? call.kind === "fire"
