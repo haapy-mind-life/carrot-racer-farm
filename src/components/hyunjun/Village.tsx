@@ -32,7 +32,6 @@ import {
   LIFE_MAPS,
   LIFE_SPOTS,
   LIFE_REGION_LABELS,
-  nearSpot,
   nearbyTreasure,
   nextFoodOrder,
   freshFoodOrderId,
@@ -142,7 +141,6 @@ export function Village() {
   const saleBusy = useRef(false);
   const nearLife = (point: Point, range = 180) => nearWorld(pos, point, range);
   const atOriginalHouse = nearWorld(pos, { x: 480, y: 565 }, 185);
-  const atOcean = pos.x >= OCEAN.start;
   const goHomeInside = () => {
     setRegion("mansion");
     setLifePos({ ...LIFE_SPOTS.mansionInside });
@@ -1025,11 +1023,9 @@ export function Village() {
                 {region === "village" ? "지도" : region === "coast" ? "큰 집" : "해변"}
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
-                {region !== "village"
-                  ? lifeActionLabel()
-                  : !driving && nearSpot(pos, LIFE_SPOTS.villageGate, 205)
-                    ? "큰 바다 여행"
-                    : diving
+                {region === "mansion" || submarine || atOriginalHouse || pos.x > 5700
+                  ? actionLifeLabel()
+                  : diving
                       ? "물 밖으로 나오기"
                       : call && callPhase === "dispatched" && nearTarget
                         ? call.kind === "fire"
