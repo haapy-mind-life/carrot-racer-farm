@@ -58,3 +58,12 @@
 - v2 세이브를 유지하고 `settledFoodSales`, `visitedSeaTreasures` 두 선택적 필드를 방어적으로 마이그레이션. 거래/보물 중복 보상 방지.
 - 아직 결정하지 않은 것: 음성 전사의 '비상도' 의미, 아빠 로봇의 최종 설정·AI 수준, 추가 메뉴·차량 개수 등. 확정으로 오해하지 않는다.
 - 결과는 PR CI / main 배포 / 실기기 UAT로 각각 확인해야 한다. 실제 삼성 브라우저와 S Pen 검증은 별도 필요하다.
+
+## 릴리스 확정 기록 (2026-10-11, 후속 문서 PR)
+
+- 생활형 오픈월드 구현: [PR #15](https://github.com/haapy-mind-life/carrot-racer-farm/pull/15) **main 병합 완료**.
+- 배포 커밋: `f468b6fa6818da1c0215e0094d97f10b1f883a4f`.
+- 게임 테스트/타입/ESLint/정적 빌드/Pages deploy: [GitHub Actions run 38107630812](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38107630812) **success**.
+- 신규 기능: 해변·대왕집·부엌 음식 집어 먹기·아빠 로봇 동행·푸드트럭 8메뉴와 별코인·잠수함 해저 3곳·자동차 120종.
+- `09_IMPLEMENTATION_REPORT.md`와 원본 v0.1.0 요구사항 문서를 함께 읽는다. 초기 문서의 '미구현' 표시는 과거 시점 기준.
+- **중요: 실제 삼성 브라우저/태블릿/S Pen 현장 플레이 UAT는 아직 NOT RUN.** CI 성공을 현준이 직접 플레이 합격으로 표현하지 않는다.
