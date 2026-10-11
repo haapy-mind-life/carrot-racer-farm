@@ -76,3 +76,25 @@ flowchart LR
 - 현재 main으로 새로 fetch하여 **PR #15 병합 및 배포 성공 여부** 확인. 이 문서에 오래된 SHA가 있어도 그 시점의 검증 증거로 취급.
 - `MEMORY.md` → `docs/README.md` → 본 문서 → `06_ACCEPTANCE_AND_UAT.md` → `08_DECISIONS.md` 순으로 읽고 다음 변경.
 - 구현 완료와 실제 사용자 플레이 합격을 혼동하지 않는다. 10개 마을 및 저장 호환성 파괴 금지, 브라우저 입력 안정성/월드 내 동작 우선.
+
+## 7. 최종 릴리스 클로즈아웃 — 구현 완료 후 추가된 검증 기록
+
+이 단락은 사용자 요청대로 **코드 구현·PR 병합·GitHub Pages 배포가 끝난 후** 실제 GitHub 실행 기록을 확인하여 추가했다. 위 'main 배포 별도 확인 필요' 문구는 최초 구현 기록 시점의 상태이며, 아래 검증 결과가 후속 최신 상태다.
+
+| Gate | 상태 | 증거 |
+| --- | --- | --- |
+| CODE | **DONE** | [PR #15](https://github.com/haapy-mind-life/carrot-racer-farm/pull/15) merged into main |
+| PR CI | **PASS** | [Hyunjun Game CI 38107598243](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38107598243) |
+| PR Pages build | **PASS** | [Direct Game Play 38107598223](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38107598223) |
+| MAIN build and deploy | **SUCCESS** | [Direct Game Play 38107630812](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38107630812); merge SHA `f468b6fa6818da1c0215e0094d97f10b1f883a4f` |
+| 공개 URL | GitHub Pages 배포 작업 성공 | https://haapy-mind-life.github.io/carrot-racer-farm/ |
+| Samsung Browser / S Pen 실기기 | **NOT RUN** | 실제 사용자 기기에서 수행 후 증거 갱신 필요 |
+| 현준이 직접 플레이/만족도 | **NOT RUN** | 직접 걷기/푸드트럭 손님 판매/잠수함 복귀를 관찰할 것 |
+
+**검증 구분:** GitHub Actions에서 배포 Job success를 확인했으나, 실제 브라우저에서 모든 조작·프레임·UI를 직접 실행한 기록은 아직 없다. 구현 기능이 아이의 기대에 충분히 부합하는지는 별도 사용자 확인이 필요하다.
+
+### 릴리스 이후 확인 3개
+
+1. 해변 입구 → 대왕집 부엌 음식 집기/먹기 → 푸드트럭 올바른 메뉴 주문 → 손님 전달 → 별코인 증가의 **연속 플레이**.
+2. 항구 → 잠수함 → 3개 해저 보물 → 항구 귀환 → 원래 10개 마을 복귀(손가락/S Pen 모두).
+3. 120종 차고/기존 소방·경찰·구급 출동/러너·농장·집의 회귀와 저장 후 새로고침, 기기별 화면 겹침/조작 지연.
