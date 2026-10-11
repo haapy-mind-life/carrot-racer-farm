@@ -413,6 +413,7 @@ export function Village() {
           🌊 {region === "village" ? "해변 안내" : "집 밖으로"}
         </button>
         <button onClick={() => setGarageOpen(true)}>🚗 자동차 120대</button>
+        {region==="village" && <span>🏠 우리 집 Lv.{state.houseTier}/4 · 🌊 해안과 바다도 하나의 월드</span>}
         <button onClick={() => setMapOpen((v) => !v)} aria-expanded={mapOpen}>
           지도 {mapOpen ? "접기" : "보기"}
         </button>
@@ -697,7 +698,7 @@ export function Village() {
                 style={{ left: pos.x, top: pos.y }}
               >
                 <div style={{ transform: `scaleX(${facing})` }}>
-                  {submarine ? (<span className="hj-submarine-player">🚤</span>) : diving ? (
+                  {submarine ? (<span className="hj-submarine-player">🚢</span>) : diving ? (
                     <span className="hj-diver">🤿</span>
                   ) : driving ? (
                     <CarArt car={carById(carId)} size={98} />
@@ -721,6 +722,8 @@ export function Village() {
         </div>
         {region === "village" && (
           <div className="hj-live-board" role="status">
+            {atOriginalHouse && <button onClick={upgradeHome} disabled={state.houseTier>=4}>🏡 {state.houseTier>=4?"우리 집 최대 단계": "우리 집 확장 · "+HOUSE_TIERS[state.houseTier]!.cost+" 별코인"}</button>}
+            {submarine && <button onClick={()=>{setSubmerged(v=>!v);setMessage(submerged?"바닷속에서 수면으로 올라왔어.":"잠수함이 바닷속으로 내려갔어!");}}>🐠 {submerged?"수면으로 올라가기":"바닷속 잠항"}</button>}
             <button onClick={reportCall}>
               ☎️{" "}
               {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}
