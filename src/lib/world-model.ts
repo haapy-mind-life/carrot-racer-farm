@@ -150,7 +150,7 @@ export function migrateSave(input: unknown): GameState {
           .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 120)
           .slice(-30)
       : [],
-    houseTier: [1,2,3,4].includes(raw["houseTier"] as number) ? (raw["houseTier"] as number) : 1,
+    houseTier: [1, 2, 3, 4].includes(raw["houseTier"] as number) ? (raw["houseTier"] as number) : 1,
     version: 2,
     money: finite(raw["money"], 50),
     plots: Array.from({ length: PLOT_COUNT }, (_, i) => {
@@ -215,7 +215,7 @@ export function reduceWorld(state: GameState, action: WorldAction): GameState {
     if (state.houseTier >= 4) return state;
     const cost = prices[state.houseTier]!;
     if (state.money < cost) return state;
-    return {...state, houseTier: state.houseTier+1, money: state.money-cost};
+    return { ...state, houseTier: state.houseTier + 1, money: state.money - cost };
   }
   if (action.type === "sell-food") {
     const menu: Record<string, number> = {

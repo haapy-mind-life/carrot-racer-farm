@@ -78,16 +78,18 @@ test("undersea rewards are earned once per treasure and survive save migration",
 });
 
 test("house grows from original home using earned coins, never below zero, keeps old records", () => {
- const start=migrateSave({money:1000,runnerBest:120,houseTier:1});
- let s=reduceWorld(start,{type:"upgrade-house"});
- assert.equal(s.houseTier,2);assert.equal(s.money,900);
- s=reduceWorld(s,{type:"upgrade-house"});
- assert.equal(s.houseTier,3);assert.equal(s.money,550);
- s=reduceWorld(s,{type:"upgrade-house"});
- assert.equal(s.houseTier,3);
- assert.equal(migrateSave(s).runnerBest,120);
- assert.equal(migrateSave(s).houseTier,3);
- const old=migrateSave({money:50});
- assert.equal(old.houseTier,1);
- assert.equal(reduceWorld(old,{type:"upgrade-house"}).houseTier,1);
+  const start = migrateSave({ money: 1000, runnerBest: 120, houseTier: 1 });
+  let s = reduceWorld(start, { type: "upgrade-house" });
+  assert.equal(s.houseTier, 2);
+  assert.equal(s.money, 900);
+  s = reduceWorld(s, { type: "upgrade-house" });
+  assert.equal(s.houseTier, 3);
+  assert.equal(s.money, 550);
+  s = reduceWorld(s, { type: "upgrade-house" });
+  assert.equal(s.houseTier, 3);
+  assert.equal(migrateSave(s).runnerBest, 120);
+  assert.equal(migrateSave(s).houseTier, 3);
+  const old = migrateSave({ money: 50 });
+  assert.equal(old.houseTier, 1);
+  assert.equal(reduceWorld(old, { type: "upgrade-house" }).houseTier, 1);
 });
