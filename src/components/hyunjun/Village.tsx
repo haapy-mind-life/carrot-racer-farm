@@ -463,7 +463,7 @@ export function Village() {
         >
           🌊 {region === "village" ? "큰 바다 · 대왕집" : "마을로 돌아가기"}
         </button>
-        <button onClick={() => setGarageOpen(true)}>🚗 자동차 100대</button>
+        <button onClick={() => setGarageOpen(true)}>🚗 자동차 120대</button>
         <button onClick={() => setMapOpen((v) => !v)} aria-expanded={mapOpen}>
           지도 {mapOpen ? "접기" : "보기"}
         </button>
