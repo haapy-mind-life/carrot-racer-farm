@@ -16,6 +16,8 @@ import { Shell } from "./Shell";
 import { MiniGame } from "./MiniGame";
 import { useMovement } from "./useMovement";
 import { MovePad } from "./MovePad";
+import { VILLAGES } from "@/game/villages";
+import { Constellation } from "./Constellation";
 import "./adventure.css";
 let returnPosition: Point = { ...SPAWN };
 const trees = Array.from({ length: 75 }, (_, i) => ({
@@ -78,14 +80,28 @@ export function Village() {
   const [pos, setPos] = useState<Point>(() => ({ ...returnPosition }));
   const [size, setSize] = useState({ w: 960, h: 600 });
   const [mini, setMini] = useState<MiniKind | null>(null);
+  const [drawing, setDrawing] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [message, setMessage] = useState("현준아, 오늘은 어디로 가볼까? 길을 따라 걸어가 봐!");
   const [walking, setWalking] = useState(false);
   const [facing, setFacing] = useState(1);
   const viewport = useRef<HTMLDivElement>(null);
   const nearby = nearestPortal(pos);
+  const friend = VILLAGES.find((v) => Math.hypot(v.x - pos.x, v.y - pos.y) < 105);
+  const district = [...VILLAGES].sort(
+    (a, b) => Math.hypot(a.x - pos.x, a.y - pos.y) - Math.hypot(b.x - pos.x, b.y - pos.y),
+  )[0];
+  const nearDrawing = Math.hypot(pos.x - 5010, pos.y - 520) < 110;
   const interact = () => {
-    if (!ready || mini) return;
+    if (!ready || mini || drawing) return;
+    if (nearDrawing) {
+      setDrawing(true);
+      return;
+    }
+    if (friend) {
+      setMessage(`${friend.friend}: ${friend.words}`);
+      return;
+    }
     if (nearby) {
       returnPosition = { ...pos };
       if ("game" in nearby) setMini(nearby.game);
@@ -95,7 +111,7 @@ export function Village() {
       setMessage("보리: 멍멍! 같이 놀아줘서 고마워!");
     }
   };
-  const movement = useMovement(!mini, interact);
+  const movement = useMovement(ready && !mini && !drawing && !mapOpen, interact);
   const direction = useRef(movement.direction);
   direction.current = movement.direction;
   useEffect(() => {
@@ -107,7 +123,7 @@ export function Village() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (mini) return;
+    if (mini || drawing || mapOpen) return;
     let raf = 0,
       last = 0;
     const loop = (now: number) => {
@@ -127,13 +143,13 @@ export function Village() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mini]);
+  }, [mini, drawing, mapOpen]);
   const camera = cameraAt(pos, size.w, size.h);
   return (
     <Shell
       active="home"
-      title="현준이의 모험 마을"
-      subtitle="걸어서 만나는 친구들, 골목마다 새로운 놀이"
+      title="현준이의 둥근 마을 여행"
+      subtitle="열 개 마을을 한 바퀴! 손가락으로 꾹 눌러 출발해요."
     >
       <div className="adv-toolbar">
         <span>✦ 오늘의 모험은 네 마음대로</span>
@@ -144,7 +160,7 @@ export function Village() {
       <div
         className="adv-viewport"
         ref={viewport}
-        aria-label="방향키 또는 WASD로 이동하는 모험 월드"
+        aria-label="화면 아래 방향 버튼으로 이동하는 열 개 마을"
         tabIndex={0}
       >
         <div
@@ -172,7 +188,60 @@ export function Village() {
                 <circle cx="75" cy="22" r="2" fill="#f9f6d9" />
               </pattern>
             </defs>
-            <rect width="2800" height="1800" fill="url(#grass)" />
+            <rect width={MAP.width} height={MAP.height} fill="url(#grass)" />
+            <path
+              d="M2700 850H5600M0 850H90M3200 400V1500M4000 400V1500M5000 400V1500M3200 500H5100M3200 1350H5100"
+              stroke="#f5e7ca"
+              strokeWidth="100"
+              fill="none"
+            />
+            {VILLAGES.filter((v) => v.x > 2800).map((v) => (
+              <g key={v.id}>
+                <ellipse cx={v.x} cy={v.y - 90} rx="245" ry="155" fill={v.color} opacity="0.7" />
+                <text x={v.x} y={v.y - 235} textAnchor="middle" fontSize="30" fill="#40564d">
+                  {v.name}
+                </text>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <g
+                    key={i}
+                    transform={`translate(${v.x - 230 + (i % 6) * 90} ${v.y - 170 + Math.floor(i / 6) * 90})`}
+                  >
+                    {v.id === "apple" || v.id === "pineapple" ? (
+                      <>
+                        <rect x="-5" y="5" width="10" height="40" rx="4" fill="#b48f69" />
+                        <circle cy="-5" r="26" fill="#8cb589" />
+                        <circle
+                          cx="10"
+                          cy="-4"
+                          r="10"
+                          fill={v.id === "apple" ? "#e48a7c" : "#f1cf66"}
+                        />
+                      </>
+                    ) : (
+                      <path
+                        d="M0-22 18 0 0 24-18 0Z"
+                        fill={
+                          v.id === "diamond"
+                            ? "#89bfe2"
+                            : v.id === "emerald"
+                              ? "#58aa8d"
+                              : "#78b8c0"
+                        }
+                        stroke="white"
+                        strokeWidth="3"
+                      />
+                    )}
+                  </g>
+                ))}
+              </g>
+            ))}
+            <text x="5010" y="370" textAnchor="middle" fontSize="30" fill="#6c6395">
+              별자리 공방
+            </text>
+            <circle cx="5010" cy="430" r="48" fill="#b7abd8" />
+            <text x="5010" y="448" textAnchor="middle" fontSize="50" fill="#fff2c1">
+              ★
+            </text>
             <ellipse cx="530" cy="1270" rx="350" ry="290" fill="#c5dca9" />
             <ellipse cx="1270" cy="360" rx="400" ry="230" fill="#c7dfc2" />
             <path
@@ -314,13 +383,27 @@ export function Village() {
               <i />
             </div>
           ))}
-          <div className="adv-friend" style={{ left: 600, top: 1300 }}>
-            <Mascot outfit="peach" small />
-            <b>토토</b>
-          </div>
-          <div className="adv-friend" style={{ left: 1320, top: 400 }}>
-            <Mascot outfit="lavender" small />
-            <b>루루</b>
+          {VILLAGES.map((v) => (
+            <button
+              key={v.id}
+              className="adv-friend adv-npc"
+              style={{ left: v.x, top: v.y }}
+              onClick={() =>
+                setMessage(
+                  `${v.friend}: ${Math.hypot(v.x - pos.x, v.y - pos.y) < 105 ? v.words : "가까이 와서 이야기하자! 아래 방향 버튼을 꾹 눌러 봐."}`,
+                )
+              }
+              aria-label={`${v.friend} · 이야기`}
+            >
+              <Mascot outfit={v.outfit} small />
+              <b>{v.friend}</b>
+              <small>{v.name}</small>
+            </button>
+          ))}
+          <div className={`adv-gate ${nearDrawing ? "near" : ""}`} style={{ left: 5010, top: 520 }}>
+            <span>손가락 · 펜 놀이</span>
+            <b>별자리 공방</b>
+            <i />
           </div>
           <div className="adv-dog" style={{ left: 1420, top: 1030 }}>
             <span>🐶</span>
@@ -336,27 +419,74 @@ export function Village() {
             <b>현준</b>
           </div>
         </div>
-        <div className="adv-location">{nearby?.name ?? "초록빛 모험 마을"}</div>
+        <div className="adv-location">
+          {nearDrawing ? "별자리 공방" : (district?.name ?? "우리 마을")}
+        </div>
         {mapOpen && (
-          <div className="adv-minimap">
-            <svg viewBox="0 0 2800 1800" aria-label="월드 지도">
-              <rect width="2800" height="1800" rx="100" fill="#d7e7b9" />
-              <path
-                d="M90 850H1600V620H2550V1100H2030M2550 850H2700M1350 120V1680"
-                stroke="#f7edd9"
-                strokeWidth="100"
-              />
-              {PORTALS.map((g) => (
-                <g key={g.id}>
-                  <circle cx={g.x} cy={g.y} r="60" fill="#b498c7" />
-                  <text x={g.x} y={g.y - 90} textAnchor="middle" fontSize="115" fill="#354e43">
-                    {g.name}
+          <div className="adv-globe" role="dialog" aria-label="둥근 세계 지도">
+            <header>
+              <b>우리 세계 한 바퀴</b>
+              <button onClick={() => setMapOpen(false)}>닫기</button>
+            </header>
+            <svg viewBox="0 0 340 160" aria-hidden="true">
+              <ellipse cx="170" cy="80" rx="155" ry="72" fill="#badde8" />
+              <ellipse cx="170" cy="80" rx="100" ry="72" fill="none" stroke="#eff9fa" />
+              <ellipse cx="170" cy="80" rx="155" ry="32" fill="none" stroke="#eff9fa" />
+              {VILLAGES.map((v, i) => (
+                <g key={v.id}>
+                  <circle
+                    cx={35 + (v.x / MAP.width) * 270}
+                    cy={24 + (v.y / MAP.height) * 110}
+                    r="14"
+                    fill={v.color}
+                  />
+                  <text
+                    x={35 + (v.x / MAP.width) * 270}
+                    y={29 + (v.y / MAP.height) * 110}
+                    textAnchor="middle"
+                    fontSize="12"
+                  >
+                    {i + 1}
                   </text>
                 </g>
               ))}
-              <circle cx={pos.x} cy={pos.y} r="65" fill="#e5796c" stroke="white" strokeWidth="20" />
+              <circle
+                cx={35 + (pos.x / MAP.width) * 270}
+                cy={24 + (pos.y / MAP.height) * 110}
+                r="5"
+                fill="#cb5e64"
+                stroke="white"
+                strokeWidth="2"
+              />
             </svg>
-            <small>분홍 점이 현준이야</small>
+            <small>동쪽과 서쪽이 이어져요 · 마을을 누르면 여행!</small>
+            <div className="adv-destinations">
+              {VILLAGES.map((v, i) => (
+                <button
+                  key={v.id}
+                  onClick={() => {
+                    const next = { x: v.x, y: v.y + 65 };
+                    setPos(next);
+                    returnPosition = next;
+                    setMapOpen(false);
+                    setMessage(`${v.name}에 도착했어! ${v.friend}에게 인사해 봐.`);
+                  }}
+                >
+                  {i + 1}. {v.name}
+                </button>
+              ))}
+            </div>
+            <button
+              className="adv-workshop"
+              onClick={() => {
+                setPos({ x: 5010, y: 550 });
+                returnPosition = { x: 5010, y: 550 };
+                setMapOpen(false);
+                setDrawing(true);
+              }}
+            >
+              ★ 별자리 공방에서 놀기
+            </button>
           </div>
         )}
         <div className="adv-bottom">
@@ -364,20 +494,36 @@ export function Village() {
           <button
             className="adv-interact"
             onClick={interact}
-            disabled={!ready || (!nearby && Math.hypot(pos.x - 1420, pos.y - 1030) >= 100)}
+            disabled={
+              !ready ||
+              (!nearby && !friend && !nearDrawing && Math.hypot(pos.x - 1420, pos.y - 1030) >= 100)
+            }
           >
-            {nearby
-              ? `E · ${nearby.name}`
-              : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
-                ? "E · 보리 돌보기"
-                : "친구나 입구로 걸어가 봐"}
+            {nearDrawing
+              ? "별자리 그리기"
+              : friend
+                ? `${friend.friend} · 이야기`
+                : nearby
+                  ? `${nearby.name} · 시작`
+                  : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
+                    ? "보리 돌보기"
+                    : "친구나 입구로 걸어가 봐"}
           </button>
         </div>
       </div>
       <div className="adv-footer">
         <p role="status">{message}</p>
-        <span>WASD / 방향키 이동 · E 놀이 · 지도에서 위치 확인</span>
+        <span>화면 방향키 꾹 누르기 · 손가락 / 펜 모두 가능 · 키보드도 사용 가능</span>
       </div>
+      {drawing && (
+        <Constellation
+          onClose={() => {
+            setDrawing(false);
+            setMessage("별자리가 반짝반짝! 다음 마을로 떠나 볼까?");
+            viewport.current?.focus();
+          }}
+        />
+      )}
       {mini && (
         <MiniGame
           kind={mini}

@@ -13,7 +13,7 @@ test("store keeps playable in-memory state when persistent writes fail", () => {
   let seen = 0;
   const unsub = store.subscribe(() => seen++);
   const next = store.dispatch({ type: "plant", index: 0, crop: "radish" });
-  assert.equal(next.plots[0].crop, "radish");
+  assert.equal(next.plots[0]?.crop, "radish");
   assert.equal(store.getSnapshot().storageWarning, true);
   assert.equal(seen, 1);
   unsub();

@@ -12,7 +12,7 @@ test("v1 save migrates into six safe v2 plots", () => {
   assert.equal(state.money, 321);
   assert.equal(state.bestRun, 44);
   assert.equal(state.plots.length, 6);
-  assert.equal(state.plots[0].crop, "carrot");
+  assert.equal(state.plots[0]?.crop, "carrot");
 });
 
 test("invalid numeric save values cannot create negative or infinite money", () => {
@@ -26,7 +26,7 @@ test("starter radish is free and can always start an empty farm", () => {
   assert.equal(radish.seedCost, 0);
   const planted = reduceWorld(state, { type: "plant", index: 0, crop: "radish" });
   assert.equal(planted.money, 0);
-  assert.equal(planted.plots[0].crop, "radish");
+  assert.equal(planted.plots[0]?.crop, "radish");
 });
 
 test("run settlement is idempotent and clear bonus is paid once", () => {

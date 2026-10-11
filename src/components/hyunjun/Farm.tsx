@@ -9,6 +9,7 @@ export function Farm() {
   const care = (i: number) => {
     const before = getState(),
       p = before.plots[i];
+    if (!p) return;
     if (!p.crop) {
       const c = cropById(selected);
       if (before.money < c.seedCost) {
@@ -23,7 +24,7 @@ export function Farm() {
     if (p.water < c.waterNeeded) {
       const a = dispatch({ type: "water", index: i });
       setMsg(
-        a.plots[i].water >= c.waterNeeded
+        (a.plots[i]?.water ?? 0) >= c.waterNeeded
           ? "다 자랐어! 한 번 더 톡 눌러 수확하자."
           : "물 한 모금! 쑥쑥 자라고 있어.",
       );
