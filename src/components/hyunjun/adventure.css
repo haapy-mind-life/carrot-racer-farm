@@ -712,3 +712,27 @@
   .hj-garage-grid button svg { max-width: 100%; }
   .hj-car-mode { position: fixed; bottom: max(145px, env(safe-area-inset-bottom)); right: 14px; min-height: 48px; width: 110px; z-index: 41; }
 }
+
+
+/* Real-time emergency dispatch and open-world experiences */
+.hj-world-scenes { position:absolute; left:0; top:0; width:5600px; height:1800px; overflow:visible; pointer-events:none; z-index:1; }
+.hj-world-route { opacity: .85; }
+.hj-route-line { animation: hj-route-move 1.5s linear infinite; }
+.hj-sos-ring { animation: hj-sos-pulse 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin:center; }
+.hj-flame { animation: hj-flame 0.55s ease-in-out infinite alternate; transform-box:fill-box; transform-origin:center; }
+.hj-bubble { animation: hj-bubble 1.5s ease-in-out infinite alternate; }
+.hj-water-jet { animation: hj-route-move .5s linear infinite; }
+.hj-station-alert { animation: hj-sos-pulse 1s ease-in-out infinite; transform-box:fill-box;transform-origin:center; }
+.hj-live-board { position:absolute; z-index:22; top:12px; right:12px; width:min(380px,calc(100% - 24px)); max-height:42%; overflow:auto; display:flex; flex-direction:column; gap:7px; padding:11px; border:3px solid #fff8e4; border-radius:18px; background:#fff9e8f5; box-shadow:0 4px 16px #39573d35; color:#40564d; touch-action:pan-y; }
+.hj-live-board strong { font-size:13px; line-height:1.5; }
+.hj-live-board small { font-size:12px; }
+.hj-live-board button { font:700 13px system-ui; border:2px solid #c7d8c1; background:#edf5e4; min-height:44px; border-radius:12px; padding:7px; color:#395748; touch-action:manipulation; cursor:pointer; }
+.hj-live-board button:first-child { background:#f9e6bd; }
+.hj-live-board button:focus-visible { outline:3px solid #4677ba;outline-offset:2px; }
+.hj-diver { font-size:59px; display:block; filter:drop-shadow(0 3px 3px #25596c60); }
+@keyframes hj-route-move { to { stroke-dashoffset:-42; } }
+@keyframes hj-sos-pulse { 50% {opacity:.42;transform:scale(1.11);} }
+@keyframes hj-flame { to {transform:scale(1.16) rotate(5deg);} }
+@keyframes hj-bubble { to { transform:translateY(-15px);opacity:.45;} }
+@media (prefers-reduced-motion: reduce) { .hj-route-line,.hj-sos-ring,.hj-flame,.hj-bubble,.hj-water-jet,.hj-station-alert {animation:none;} }
+@media (max-width:600px) { .hj-live-board { width:min(255px,calc(100% - 25px)); top:10px;right:8px;max-height:34%;padding:6px; } .hj-live-board button {font-size:11px;min-height:38px;} .hj-live-board strong {font-size:11px;} .hj-diver {font-size:45px;} }
