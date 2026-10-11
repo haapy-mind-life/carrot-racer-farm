@@ -594,7 +594,7 @@ export function Village() {
                   <button
                     onClick={() => {
                       setSiren((v) => !v);
-                if (!siren) playGameSiren();
+                      if (!siren) playGameSiren();
                       setMessage("사이렌을 " + (siren ? "껐어." : "켰어!"));
                     }}
                   >
