@@ -682,3 +682,33 @@
   max-height: 85dvh;
   z-index: 50;
 }
+
+
+/* Hyunjun vehicle garage and friend silhouettes */
+.adv-toolbar { gap: 8px; flex-wrap: wrap; }
+.hj-garage-backdrop { position: fixed; inset: 0; z-index: 110; background: #22382cb8; display: grid; place-items: center; padding: 12px; }
+.hj-garage { width: min(920px, 100%); max-height: 92dvh; overflow: auto; border-radius: 24px; background: #fffbea; padding: 18px; color: #435b4b; box-shadow: 0 20px 80px #1d302c55; }
+.hj-garage header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.hj-garage h2 { margin: 0 0 4px; font-size: clamp(22px, 4vw, 30px); }
+.hj-garage header p { margin: 0 0 10px; }
+.hj-garage button { cursor: pointer; font: inherit; }
+.hj-garage header button, .hj-garage footer button { min-height: 44px; border-radius: 12px; border: 1px solid #c1d3b8; background: #edf5e8; padding: 8px 14px; color: #435b4b; }
+.hj-garage button:focus-visible, .hj-car-mode:focus-visible { outline: 3px solid #416aa8; outline-offset: 2px; }
+.hj-garage-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.hj-garage-grid button { min-width: 0; border: 2px solid #d5e1cf; border-radius: 15px; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5px; }
+.hj-garage-grid button.chosen { border-color: #469778; background: #e1f5e9; box-shadow: inset 0 0 0 2px #469778; }
+.hj-garage-grid button span { font-size: 13px; font-weight: 700; }
+.hj-garage-grid button small { font-size: 11px; }
+.hj-garage footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-top: 15px; }
+.hj-garage footer button:disabled { opacity: .4; cursor: default; }
+.hj-garage footer .hj-drive-now { background: #4b9276; color: white; border-color: #4b9276; }
+.hj-car-mode { min-width: 104px; min-height: 54px; align-self: end; background: #ffefbd; color: #415a4d; border: 2px solid #d5bb6b; border-radius: 18px; font: 700 13px system-ui; }
+.adv-npc svg { display: block; margin: auto; max-width: 100%; }
+.adv-player svg { display: block; margin: auto; }
+@media (max-width: 600px) {
+  .hj-garage-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hj-garage { padding: 10px; border-radius: 16px; }
+  .hj-garage-grid button span { font-size: 11px; }
+  .hj-garage-grid button svg { max-width: 100%; }
+  .hj-car-mode { position: fixed; bottom: max(145px, env(safe-area-inset-bottom)); right: 14px; min-height: 48px; width: 110px; z-index: 41; }
+}
