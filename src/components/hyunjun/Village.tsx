@@ -17,6 +17,7 @@ import { Garage, loadCarId, saveCarId } from "./Garage";
 import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
+import { playGameSiren } from "@/game/siren";
 import {
   WORLD_CALLS,
   STATIONS,
@@ -143,6 +144,7 @@ export function Village() {
     saveCarId(emergencyVehicle.id);
     setCallPhase("dispatched");
     setSiren(true);
+    playGameSiren();
     setMapOpen(false);
     setMessage(call.title + " 사이렌 출동! 파란 길을 따라가자.");
   };
@@ -234,6 +236,20 @@ export function Village() {
       );
     }
   };
+  useEffect(() => {
+    // Incidents appear in the same world without requiring a separate mini-game.
+    const timeout = window.setTimeout(() => {
+      setCallIndex((current) => {
+        if (current < 0) {
+          setCallPhase("reported");
+          setMessage(WORLD_CALLS[0]!.report);
+          return 0;
+        }
+        return current;
+      });
+    }, 12000);
+    return () => window.clearTimeout(timeout);
+  }, []);
   const movement = useMovement(!mini && !drawing && !mapOpen && !garageOpen, interact);
   const direction = useRef(movement.direction);
   direction.current = movement.direction;
@@ -578,6 +594,7 @@ export function Village() {
                   <button
                     onClick={() => {
                       setSiren((v) => !v);
+                if (!siren) playGameSiren();
                       setMessage("사이렌을 " + (siren ? "껐어." : "켰어!"));
                     }}
                   >
