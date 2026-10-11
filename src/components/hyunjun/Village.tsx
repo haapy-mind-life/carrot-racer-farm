@@ -718,6 +718,7 @@ export function Village() {
               <UnifiedCoast
                 houseTier={state.houseTier}
                 submarine={submarine}
+                submerged={submerged}
                 discovered={state.visitedSeaTreasures}
                 robotFollowing={robotFollowing}
               />
@@ -785,7 +786,15 @@ export function Village() {
               >
                 <div style={{ transform: `scaleX(${facing})` }}>
                   {submarine ? (
-                    <span className="hj-submarine-player">🚢</span>
+                    <svg className="hj-submarine-player" width="176" height="110" viewBox="0 0 176 110" role="img" aria-label="노란 잠수함">
+                      <ellipse cx="83" cy="76" rx="74" ry="29" fill="#ffc956" stroke="#f9f1cc" strokeWidth="7" />
+                      <path d="M71 51V19H124" fill="none" stroke="#ffd977" strokeWidth="17" strokeLinecap="round" />
+                      <rect x="74" y="18" width="32" height="33" rx="7" fill="#ffc956" />
+                      <circle cx="48" cy="72" r="17" fill="#a3e8ec" stroke="white" strokeWidth="4" />
+                      <circle cx="90" cy="72" r="17" fill="#a3e8ec" stroke="white" strokeWidth="4" />
+                      <circle cx="131" cy="72" r="17" fill="#a3e8ec" stroke="white" strokeWidth="4" />
+                      <path d="M14 66L2 44V95L14 83" fill="#ffdd72" stroke="#f8f0d0" strokeWidth="5" />
+                    </svg>
                   ) : diving ? (
                     <span className="hj-diver">🤿</span>
                   ) : driving ? (
