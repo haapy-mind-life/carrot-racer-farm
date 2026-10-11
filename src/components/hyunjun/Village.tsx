@@ -482,12 +482,16 @@ export function Village() {
       <div className="adv-toolbar">
         <span>✦ 오늘의 모험은 네 마음대로 · {state.money} 별코인</span>
         <button
-          onClick={() =>
-            region === "village"
-              ? (setPos({ x: 6180, y: 940 }),
-                setMessage("해안 마을로 왔어! 왼쪽으로 걸어가면 원래 마을이 이어져 있어."))
-              : backToWorld()
-          }
+          onClick={() => {
+            if (region !== "village") { backToWorld(); return; }
+            const coastArrival = { x: 6180, y: 940 };
+            setSubmarine(false);
+            setSubmerged(false);
+            setDriving(false);
+            setPos(coastArrival);
+            returnPosition = coastArrival;
+            setMessage("같은 월드의 해안 마을이야! 서쪽 길을 따라 원래 마을까지 걸어갈 수도 있어.");
+          }}
         >
           🌊 {region === "village" ? "해변 안내" : "집 밖으로"}
         </button>
