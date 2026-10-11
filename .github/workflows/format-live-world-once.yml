@@ -1,0 +1,30 @@
+name: Format Live World Once
+on:
+  push:
+    branches: [feat/live-world-emergency-response-20261011]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: "!contains(github.event.head_commit.message, 'chore: format live world')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Prettier new live world files
+        run: npx prettier --write src/game/world-events.ts src/game/world-events.test.ts src/components/hyunjun/WorldScenes.tsx src/components/hyunjun/Village.tsx
+      - name: Push formatted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/game/world-events.ts src/game/world-events.test.ts src/components/hyunjun/WorldScenes.tsx src/components/hyunjun/Village.tsx
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: format live world"
+            git push origin HEAD:feat/live-world-emergency-response-20261011
+          fi
