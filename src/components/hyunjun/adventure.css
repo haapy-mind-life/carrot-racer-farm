@@ -542,3 +542,143 @@
     max-height: 94dvh;
   }
 }
+
+.adv-console {
+  position: fixed;
+  z-index: 40;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  align-items: flex-end;
+}
+.adv-joystick-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.adv-joystick-group > small {
+  font: 600 11px system-ui;
+  color: #385844;
+  background: #fffaf0ef;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+.adv-joystick {
+  position: relative;
+  width: 138px;
+  height: 138px;
+  border: 4px solid #fffdf2;
+  border-radius: 50%;
+  background: #d4e2c8ed;
+  box-shadow:
+    0 5px 18px #36533c40,
+    inset 0 0 0 9px #eff5e2;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  cursor: grab;
+}
+.adv-stick-arrows {
+  position: absolute;
+  inset: 10px;
+  text-align: center;
+  font: bold 23px/35px system-ui;
+  color: #6b8969;
+  pointer-events: none;
+}
+.adv-stick-knob {
+  position: absolute;
+  left: calc(50% - 25px);
+  top: calc(50% - 25px);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #6b9775;
+  border: 4px solid #fffdf1;
+  box-shadow: 0 3px 7px #36533c50;
+  pointer-events: none;
+}
+.adv-action-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 46%;
+}
+.adv-action-buttons .adv-interact {
+  width: 112px;
+  min-height: 86px;
+  border-radius: 30px;
+  padding: 10px;
+  font-size: 16px;
+  touch-action: manipulation;
+}
+.adv-map-button {
+  min-width: 70px;
+  min-height: 46px;
+  padding: 8px 16px;
+  border: 3px solid #fffdf1;
+  border-radius: 18px;
+  background: #f0ce80;
+  color: #455941;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.adv-mini-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  position: sticky;
+  bottom: 0;
+  padding: 10px 0;
+  background: #fffaf0f2;
+}
+.adv-footer {
+  padding-bottom: 195px;
+}
+@media (max-width: 420px), (max-height: 500px) {
+  .adv-joystick {
+    width: 118px;
+    height: 118px;
+  }
+  .adv-stick-arrows {
+    inset: 5px;
+    line-height: 32px;
+  }
+  .adv-action-buttons .adv-interact {
+    width: 98px;
+    min-height: 78px;
+    font-size: 14px;
+  }
+}
+.adv-touch-hint {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(540px, 100%);
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #fffaf0ee;
+  color: #40564d;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  pointer-events: none;
+}
+.adv-globe {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  max-height: 85dvh;
+  z-index: 50;
+}

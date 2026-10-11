@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, type PointerEvent } from "react";
 import { createInput, movementKey } from "@/game/input";
 export function useMovement(enabled: boolean, action: () => void) {
   const input = useRef(createInput());
@@ -25,12 +25,17 @@ export function useMovement(enabled: boolean, action: () => void) {
     };
     const up = (e: KeyboardEvent) => state.keyboard.delete(movementKey(e.key, e.code));
     const reset = () => state.clear();
+    const releasePointer = (e: globalThis.PointerEvent) => state.pointers.delete(e.pointerId);
+    window.addEventListener("pointerup", releasePointer);
+    window.addEventListener("pointercancel", releasePointer);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("blur", reset);
     document.addEventListener("visibilitychange", reset);
     return () => {
       reset();
+      window.removeEventListener("pointerup", releasePointer);
+      window.removeEventListener("pointercancel", releasePointer);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", reset);
@@ -43,13 +48,25 @@ export function useMovement(enabled: boolean, action: () => void) {
     onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
       if (!enabled || e.button !== 0) return;
       e.preventDefault();
-      e.currentTarget.setPointerCapture(e.pointerId);
       input.current.pointers.set(e.pointerId, key);
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* Window release events remain available. */
+      }
     },
     onPointerUp: release,
     onPointerCancel: release,
     onLostPointerCapture: release,
     onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
   });
-  return { direction: () => input.current.direction(), hold };
+  const setStick = useCallback(
+    (value: { x: number; y: number }) => input.current.setStick(value),
+    [],
+  );
+  return {
+    direction: () => (enabled ? input.current.direction() : { x: 0, y: 0 }),
+    hold,
+    setStick,
+  };
 }

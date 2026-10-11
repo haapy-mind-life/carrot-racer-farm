@@ -3,7 +3,7 @@ import { actMini, newMini, stepMini, type MiniKind } from "@/game/adventure";
 import { characterUrl } from "@/game/character-art";
 import { useGame } from "@/lib/game-state";
 import { useMovement } from "./useMovement";
-import { MovePad } from "./MovePad";
+import { Joystick } from "./Joystick";
 const INFO = {
   treasure: {
     name: "토토의 보물찾기",
@@ -221,7 +221,12 @@ export function MiniGame({ kind, onClose }: { kind: MiniKind; onClose: () => voi
               낚기!
             </button>
           ) : (
-            <MovePad hold={movement.hold} />
+            <div className="adv-mini-controls">
+              <Joystick onMove={movement.setStick} />
+              <button className="adv-interact" onClick={() => setPaused(true)}>
+                잠깐 쉬기
+              </button>
+            </div>
           ))}
       </div>
     </div>

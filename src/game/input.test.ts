@@ -18,3 +18,13 @@ test("releasing one finger does not release another finger or keyboard", () => {
   i.clear();
   assert.deepEqual(i.direction(), { x: 0, y: 0 });
 });
+
+test("joystick movement combines with keyboard and clears on cancel", () => {
+  const input = createInput();
+  input.setStick({ x: 1, y: -0.5 });
+  assert.deepEqual(input.direction(), { x: 1, y: -0.5 });
+  input.keyboard.add("s");
+  assert.equal(input.direction().y, 0.5);
+  input.clear();
+  assert.deepEqual(input.direction(), { x: 0, y: 0 });
+});
