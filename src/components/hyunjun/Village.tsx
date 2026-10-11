@@ -17,6 +17,8 @@ import { Garage, loadCarId, saveCarId } from "./Garage";
 import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
+import { LifeWorldScene } from "./LifeWorldScene";
+import { FOOD_MENU, LIFE_MAPS, LIFE_SPOTS, LIFE_REGION_LABELS, nearSpot, nearbyTreasure, nextFoodOrder, stepLifePlayer, type LifeRegion, type FoodId, type FoodOrder } from "@/game/life-world";
 import { playGameSiren } from "@/game/siren";
 import {
   WORLD_CALLS,
@@ -106,6 +108,84 @@ export function Village() {
   const [mapOpen, setMapOpen] = useState(false);
   const [message, setMessage] = useState("현준아, 오늘은 어디로 가볼까? 길을 따라 걸어가 봐!");
   const [walking, setWalking] = useState(false);
+  const [region, setRegion] = useState<LifeRegion>("village");
+  const [lifePos, setLifePos] = useState<Point>({ ...LIFE_SPOTS.coastArrival });
+  const [holding, setHolding] = useState<FoodId | null>(null);
+  const [robotFollowing, setRobotFollowing] = useState(false);
+  const [submarine, setSubmarine] = useState(false);
+  const [orderIndex, setOrderIndex] = useState(0);
+  const [order, setOrder] = useState<FoodOrder>(nextFoodOrder(0, "food-order-1"));
+  const [truckOpen, setTruckOpen] = useState(false);
+  const saleBusy = useRef(false);
+  const activePos = region === "village" ? pos : lifePos;
+  const nearLife = (target: Point, radius = 180) => nearSpot(lifePos, target, radius);
+  const travelTo = (next: Exclude<LifeRegion, "village">, point: Point) => {
+    setRegion(next); setLifePos({ ...point }); setDriving(false); setDiving(false);
+    setTruckOpen(false); setMapOpen(false); setSubmarine(next === "deep-sea");
+    setMessage(LIFE_REGION_LABELS[next] + "에 도착했어! 직접 움직여 탐험하자.");
+  };
+  const leaveLife = () => {
+    setRegion("village"); setTruckOpen(false); setSubmarine(false);
+    setPos({ x: LIFE_SPOTS.villageGate.x, y: LIFE_SPOTS.villageGate.y });
+    returnPosition = { ...LIFE_SPOTS.villageGate };
+    setMessage("열 개 마을로 돌아왔어!");
+  };
+  const sellPreparedFood = () => {
+    if (saleBusy.current || order.phase !== "prepared" || holding !== order.foodId || !nearLife(LIFE_SPOTS.foodCustomer, 220)) return;
+    saleBusy.current = true;
+    dispatch({ type: "sell-food", id: order.id, foodId: order.foodId });
+    setHolding(null);
+    const next = orderIndex + 1;
+    setOrderIndex(next);
+    setOrder(nextFoodOrder(next, "food-order-" + (next + 1)));
+    setMessage("음식을 손님에게 전달했어! 별코인을 벌었어!");
+    window.setTimeout(() => { saleBusy.current = false; }, 300);
+  };
+  const doLifeAction = () => {
+    if (region === "coast") {
+      if (nearLife(LIFE_SPOTS.coastExit)) { leaveLife(); return; }
+      if (nearLife(LIFE_SPOTS.mansionDoor, 280)) { travelTo("mansion", LIFE_SPOTS.mansionInside); return; }
+      if (nearLife(LIFE_SPOTS.foodCustomer, 220) && order.phase === "prepared") { sellPreparedFood(); return; }
+      if (nearLife(LIFE_SPOTS.foodTruck, 275)) { setTruckOpen(true); setMessage("푸드트럭에서 음식을 골라 직접 손님에게 가져다주자!"); return; }
+      if (nearLife(LIFE_SPOTS.harbor, 290)) { travelTo("deep-sea", LIFE_SPOTS.seaStart); return; }
+      if (nearLife(LIFE_SPOTS.robot, 240)) { setRobotFollowing(v => !v); setMessage("아빠 로봇: " + (robotFollowing ? "다음에 또 놀자!" : "현준아, 같이 놀러 가자!")); return; }
+    }
+    if (region === "mansion") {
+      if (nearLife(LIFE_SPOTS.mansionExit, 260)) { travelTo("coast", { x: LIFE_SPOTS.mansionDoor.x, y: LIFE_SPOTS.mansionDoor.y + 190 }); return; }
+      if (nearLife(LIFE_SPOTS.mansionKitchen, 300)) { setHolding("pizza"); setMessage("피자를 손에 들었어! 식탁으로 가서 먹어 보자."); return; }
+      if (nearLife(LIFE_SPOTS.mansionDining, 310) && holding) { setHolding(null); setMessage("냠냠! 맛있게 먹었어!"); return; }
+    }
+    if (region === "deep-sea") {
+      if (nearLife(LIFE_SPOTS.seaReturn, 310)) { travelTo("coast", LIFE_SPOTS.harbor); return; }
+      const treasure=nearbyTreasure(lifePos);
+      if (treasure) {
+        if (!state.visitedSeaTreasures.includes(treasure.id)) dispatch({type:"explore-sea", id:treasure.id});
+        setMessage(treasure.name + "을 발견했어! 바닷속 탐험 성공!");
+        return;
+      }
+    }
+    setMessage("조이스틱으로 가까이 다가가서 행동 버튼을 눌러 봐!");
+  };
+  const lifeActionLabel = () => {
+    if (region === "coast") {
+      if (nearLife(LIFE_SPOTS.coastExit)) return "마을로 돌아가기";
+      if (nearLife(LIFE_SPOTS.mansionDoor, 280)) return "대왕집 들어가기";
+      if (nearLife(LIFE_SPOTS.foodCustomer,220) && order.phase === "prepared") return "손님에게 음식 주기";
+      if (nearLife(LIFE_SPOTS.foodTruck,275)) return "푸드트럭 장사";
+      if (nearLife(LIFE_SPOTS.harbor,290)) return "잠수함 타기";
+      if (nearLife(LIFE_SPOTS.robot,240)) return robotFollowing?"로봇 쉬게 하기":"아빠 로봇 따라오기";
+    }
+    if(region==="mansion") {
+      if(nearLife(LIFE_SPOTS.mansionExit,260)) return "마당으로 나가기";
+      if(nearLife(LIFE_SPOTS.mansionKitchen,300)) return "음식 집기";
+      if(nearLife(LIFE_SPOTS.mansionDining,310) && holding) return "음식 먹기";
+    }
+    if(region==="deep-sea") {
+      if(nearLife(LIFE_SPOTS.seaReturn,310)) return "항구로 돌아가기";
+      if(nearbyTreasure(lifePos)) return "바닷속 보물 발견!";
+    }
+    return "주변 살펴보기";
+  };
   const [garageOpen, setGarageOpen] = useState(false);
   const [carId, setCarId] = useState(loadCarId);
   const [driving, setDriving] = useState(false);
@@ -188,6 +268,7 @@ export function Village() {
   const nearDrawing = Math.hypot(pos.x - 5010, pos.y - 520) < 110;
   const interact = () => {
     if (!ready || mini || drawing || garageOpen) return;
+    if (region !== "village") { doLifeAction(); return; }
     if (call && callPhase === "dispatched" && nearTarget) {
       helpCall();
       return;
@@ -250,7 +331,7 @@ export function Village() {
     }, 12000);
     return () => window.clearTimeout(timeout);
   }, []);
-  const movement = useMovement(!mini && !drawing && !mapOpen && !garageOpen, interact);
+  const movement = useMovement(!mini && !drawing && !mapOpen && !garageOpen && !truckOpen, interact);
   const direction = useRef(movement.direction);
   direction.current = movement.direction;
   useEffect(() => {
@@ -262,7 +343,7 @@ export function Village() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (mini || drawing || mapOpen || garageOpen) return;
+    if (mini || drawing || mapOpen || garageOpen || truckOpen) return;
     let raf = 0,
       last = 0;
     const loop = (now: number) => {
@@ -271,7 +352,8 @@ export function Village() {
       setWalking(moving);
       if (d.x) setFacing(d.x > 0 ? 1 : -1);
       const dt = last ? (now - last) / 1000 : 0;
-      if (moving)
+      if (moving && region !== "village") setLifePos(p => stepLifePlayer(region, p, d, dt));
+      if (moving && region === "village")
         setPos((p) => {
           const next = diving ? diveStep(p, d, dt) : stepPlayer(p, d, dt * (driving ? 1.48 : 1));
           returnPosition = next;
@@ -282,8 +364,11 @@ export function Village() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mini, drawing, mapOpen, garageOpen, diving, driving]);
-  const camera = cameraAt(pos, size.w, size.h);
+  }, [mini, drawing, mapOpen, garageOpen, truckOpen, diving, driving, region]);
+  const camera = region === "village"
+    ? cameraAt(pos, size.w, size.h)
+    : { x: Math.max(0, Math.min(LIFE_MAPS[region].width - size.w, lifePos.x - size.w/2)),
+        y: Math.max(0, Math.min(LIFE_MAPS[region].height - size.h, lifePos.y - size.h/2)) };
   return (
     <Shell
       active="home"
@@ -291,7 +376,8 @@ export function Village() {
       subtitle="열 개 마을을 한 바퀴! 왼쪽 조이스틱을 밀어 출발해요."
     >
       <div className="adv-toolbar">
-        <span>✦ 오늘의 모험은 네 마음대로</span>
+        <span>✦ 오늘의 모험은 네 마음대로 · {state.money} 별코인</span>
+        <button onClick={() => region === "village" ? travelTo("coast", LIFE_SPOTS.coastArrival) : leaveLife()}>🌊 {region === "village" ? "큰 바다 · 대왕집" : "마을로 돌아가기"}</button>
         <button onClick={() => setGarageOpen(true)}>🚗 자동차 100대</button>
         <button onClick={() => setMapOpen((v) => !v)} aria-expanded={mapOpen}>
           지도 {mapOpen ? "접기" : "보기"}
@@ -306,11 +392,12 @@ export function Village() {
         <div
           className="adv-map"
           style={{
-            width: MAP.width,
-            height: MAP.height,
+            width: region === "village" ? MAP.width : LIFE_MAPS[region].width,
+            height: region === "village" ? MAP.height : LIFE_MAPS[region].height,
             transform: `translate(${-camera.x}px,${-camera.y}px)`,
           }}
         >
+          {region === "village" ? <>
           <svg
             className="adv-terrain"
             viewBox={`0 0 ${MAP.width} ${MAP.height}`}
@@ -574,8 +661,9 @@ export function Village() {
             </div>
             <b>{driving ? "현준 🚗" : "현준"}</b>
           </div>
+          </> : <LifeWorldScene region={region} player={lifePos} following={robotFollowing} holding={holding} submarine={submarine} explored={state.visitedSeaTreasures}/>}
         </div>
-        <div className="hj-live-board" role="status">
+        {region === "village" && <div className="hj-live-board" role="status">
           <button onClick={reportCall}>
             ☎️ {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}
           </button>
@@ -651,11 +739,12 @@ export function Village() {
               {camping ? "⛺ 캠핑 정리" : "⛺ 텐트 치기"}
             </button>
           )}
-        </div>
+        </div>}
+        {region !== "village" && <div className="hj-life-hud"><b>{LIFE_REGION_LABELS[region]}</b><small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small><span>💰 {state.money} 별코인</span>{holding && <span>손에 든 음식: {FOOD_MENU.find(food=>food.id===holding)?.name}</span>}</div>}
         <div className="adv-location">
-          {nearDrawing ? "별자리 공방" : (district?.name ?? "우리 마을")}
+          {region !== "village" ? LIFE_REGION_LABELS[region] : nearDrawing ? "별자리 공방" : (district?.name ?? "우리 마을")}
         </div>
-        {mapOpen && (
+        {mapOpen && region === "village" && (
           <div className="adv-globe" role="dialog" aria-label="둥근 세계 지도">
             <header>
               <b>우리 세계 한 바퀴</b>
@@ -722,11 +811,11 @@ export function Village() {
             </button>
           </div>
         )}
-        {!mini && !drawing && !mapOpen && !garageOpen && (
+        {!mini && !drawing && !mapOpen && !garageOpen && !truckOpen && (
           <div className="adv-bottom adv-console">
             <p className="adv-touch-hint">{message}</p>
             <Joystick onMove={movement.setStick} />
-            <button
+            {region === "village" && <button
               className="hj-car-mode"
               onClick={() => {
                 if (driving) {
@@ -736,13 +825,13 @@ export function Village() {
               }}
             >
               {driving ? "차에서 내리기" : "자동차 타기"}
-            </button>
+            </button>}
             <div className="adv-action-buttons">
-              <button className="adv-map-button" onClick={() => setMapOpen(true)}>
-                지도
+              <button className="adv-map-button" onClick={() => region === "village" ? setMapOpen(true) : region === "coast" ? travelTo("mansion", LIFE_SPOTS.mansionInside) : travelTo("coast", LIFE_SPOTS.coastArrival)}>
+                {region === "village" ? "지도" : region === "coast" ? "큰 집" : "해변"}
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
-                {diving
+                {region !== "village" ? lifeActionLabel() : diving
                   ? "물 밖으로 나오기"
                   : call && callPhase === "dispatched" && nearTarget
                     ? call.kind === "fire"
@@ -772,6 +861,7 @@ export function Village() {
         <p role="status">{message}</p>
         <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
+      {truckOpen && <div className="hj-food-backdrop"><section className="hj-food-shop" role="dialog" aria-modal="true" aria-label="푸드트럭 메뉴"><header><h2>🍕 현준이 푸드트럭</h2><button onClick={() => setTruckOpen(false)}>닫기 ✕</button></header><p>손님 주문: <strong>{FOOD_MENU.find(f=>f.id===order.foodId)?.name}</strong> · 음식을 고르고 손님에게 가져다줘!</p><div className="hj-food-menu">{FOOD_MENU.map(food=><button key={food.id} aria-pressed={holding===food.id} onClick={() => {setHolding(food.id); if(food.id===order.foodId) {setOrder(prev=>({...prev,phase:"prepared"}));setMessage("주문한 음식을 손에 들었어. 손님에게 전달하자!");}else{setMessage("손님이 원하는 메뉴를 골라야 해!");}}}><span style={{fontSize:20*food.size}}>{food.emoji}</span><b>{food.name}</b><small>{food.price} 별코인</small></button>)}</div><p>{order.phase==="prepared" ? "✅ 주문 음식 준비 완료! 손님에게 가서 전달하자." : "주문에 맞는 메뉴를 골라 줘."}</p><button onClick={() => setTruckOpen(false)}>트럭에서 나와 손님 만나기</button></section></div>}
       {garageOpen && (
         <Garage
           selected={carId}
