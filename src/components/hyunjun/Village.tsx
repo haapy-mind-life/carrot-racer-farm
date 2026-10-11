@@ -814,6 +814,7 @@ export function Village() {
               holding={holding}
               submarine={submarine}
               explored={state.visitedSeaTreasures}
+              houseTier={state.houseTier}
             />
           )}
         </div>
