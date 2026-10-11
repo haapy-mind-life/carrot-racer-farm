@@ -55,8 +55,11 @@ export type FoodOrder = {
   phase: "offered" | "prepared";
 };
 export function freshFoodOrderId() {
-  try { return "food-" + globalThis.crypto.randomUUID(); }
-  catch { return "food-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2); }
+  try {
+    return "food-" + globalThis.crypto.randomUUID();
+  } catch {
+    return "food-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+  }
 }
 export function nextFoodOrder(index: number, id: string): FoodOrder {
   const food = FOOD_MENU[((index % FOOD_MENU.length) + FOOD_MENU.length) % FOOD_MENU.length]!;

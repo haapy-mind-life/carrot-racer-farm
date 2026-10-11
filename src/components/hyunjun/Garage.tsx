@@ -44,7 +44,9 @@ export function Garage({
             >
               <CarArt car={car} size={85} />
               <span>{car.name}</span>
-              <small>{car.number} / {CARS.length}</small>
+              <small>
+                {car.number} / {CARS.length}
+              </small>
             </button>
           ))}
         </div>

@@ -61,8 +61,20 @@ export function CarArt({ car, size = 110 }: { car: Car; size?: number }) {
         <rect x="64" y="29" width="32" height="9" rx="3" fill="#fff9e2" stroke="#5e6b6d" />
       )}
       {car.kind === "camper" && <rect x="91" y="62" width="24" height="18" rx="3" fill="#fff8d9" />}
-      {car.kind === "foodtruck" && <><path d="M25 62 H126 V79 H25Z" fill="#fce2a8" /><text x="72" y="75" fontSize="16" textAnchor="middle">🍕🥤</text></>}
-      {car.kind === "limo" && <><rect x="27" y="62" width="95" height="18" rx="6" fill="#fff1ba" /><path d="M65 39V57M90 39V57" stroke="#ffffff" strokeWidth="3" /></>}
+      {car.kind === "foodtruck" && (
+        <>
+          <path d="M25 62 H126 V79 H25Z" fill="#fce2a8" />
+          <text x="72" y="75" fontSize="16" textAnchor="middle">
+            🍕🥤
+          </text>
+        </>
+      )}
+      {car.kind === "limo" && (
+        <>
+          <rect x="27" y="62" width="95" height="18" rx="6" fill="#fff1ba" />
+          <path d="M65 39V57M90 39V57" stroke="#ffffff" strokeWidth="3" />
+        </>
+      )}
       {car.kind === "monster" && (
         <path d="M31 50 L57 30 H90 L116 50" fill="none" stroke="#fff3c2" strokeWidth="5" />
       )}
