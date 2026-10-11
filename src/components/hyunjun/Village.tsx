@@ -240,7 +240,7 @@ export function Village() {
       setDriving(false);
       setSubmarine(true);
       setSubmerged(false);
-      setPos({ x: OCEAN.start + 65, y: COAST.harbor.y });
+      setPos({ x: OCEAN.start + 300, y: COAST.harbor.y });
       setMessage("잠수함 탑승! 오른쪽 버튼으로 잠수하고 조이스틱으로 탐험하자.");
       return;
     }
@@ -970,6 +970,7 @@ export function Village() {
             <b>{LIFE_REGION_LABELS[region]}</b>
             <small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small>
             <span>💰 {state.money} 별코인</span>
+            {region === "mansion" && <button onClick={() => void nav({ to: "/house" })}>🪑 기존 우리 집 꾸미기</button>}
             {holding && (
               <span>손에 든 음식: {FOOD_MENU.find((food) => food.id === holding)?.name}</span>
             )}
