@@ -9,10 +9,10 @@ export const LIFE_MAPS = {
 
 export const LIFE_SPOTS = {
   villageGate: { x: 5380, y: 990 },
-  coastArrival: { x: 260, y: 1000 },
+  coastArrival: { x: 460, y: 1000 },
   coastExit: { x: 150, y: 1000 },
   mansionDoor: { x: 1210, y: 1080 },
-  mansionInside: { x: 400, y: 1080 },
+  mansionInside: { x: 650, y: 1080 },
   mansionExit: { x: 210, y: 1100 },
   mansionKitchen: { x: 920, y: 560 },
   mansionDining: { x: 1390, y: 970 },
@@ -20,7 +20,7 @@ export const LIFE_SPOTS = {
   foodTruck: { x: 1980, y: 900 },
   foodCustomer: { x: 2310, y: 1100 },
   harbor: { x: 3120, y: 1030 },
-  seaStart: { x: 360, y: 970 },
+  seaStart: { x: 700, y: 970 },
   seaReturn: { x: 240, y: 970 },
 } as const;
 
@@ -54,6 +54,10 @@ export type FoodOrder = {
   foodId: FoodId;
   phase: "offered" | "prepared";
 };
+export function freshFoodOrderId() {
+  try { return "food-" + globalThis.crypto.randomUUID(); }
+  catch { return "food-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2); }
+}
 export function nextFoodOrder(index: number, id: string): FoodOrder {
   const food = FOOD_MENU[((index % FOOD_MENU.length) + FOOD_MENU.length) % FOOD_MENU.length]!;
   return { id, foodId: food.id, phase: "offered" };
