@@ -122,7 +122,7 @@ export function enterLake(p: Point): Point {
 }
 export function diveStep(p: Point, d: Point, dt: number): Point {
   const length = Math.max(1, Math.hypot(d.x, d.y));
-  const speed = 180 * clamp(dt, 0, 0.05) / length;
+  const speed = (180 * clamp(dt, 0, 0.05)) / length;
   return {
     x: clamp(p.x + d.x * speed, LAKE.left + 24, LAKE.right - 24),
     y: clamp(p.y + d.y * speed, LAKE.top + 24, LAKE.bottom - 24),
@@ -136,5 +136,8 @@ export function leaveLake(p: Point): Point {
     { gap: LAKE.bottom - p.y, point: { x: p.x, y: LAKE.bottom + 48 } },
   ];
   const nearest = sides.reduce((best, side) => (side.gap < best.gap ? side : best));
-  return { x: clamp(nearest.point.x, 24, MAP.width - 24), y: clamp(nearest.point.y, 24, MAP.height - 24) };
+  return {
+    x: clamp(nearest.point.x, 24, MAP.width - 24),
+    y: clamp(nearest.point.y, 24, MAP.height - 24),
+  };
 }

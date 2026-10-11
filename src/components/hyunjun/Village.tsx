@@ -17,7 +17,22 @@ import { Garage, loadCarId, saveCarId } from "./Garage";
 import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
-import { WORLD_CALLS, STATIONS, CAMP, distance, canHelp, helpProgress, nextCallIndex, routeDirection, isNearLake, enterLake, diveStep, leaveLake, isNearCamp, thiefPosition } from "@/game/world-events";
+import {
+  WORLD_CALLS,
+  STATIONS,
+  CAMP,
+  distance,
+  canHelp,
+  helpProgress,
+  nextCallIndex,
+  routeDirection,
+  isNearLake,
+  enterLake,
+  diveStep,
+  leaveLake,
+  isNearCamp,
+  thiefPosition,
+} from "@/game/world-events";
 import { Shell } from "./Shell";
 import { MiniGame } from "./MiniGame";
 import { useMovement } from "./useMovement";
@@ -94,14 +109,17 @@ export function Village() {
   const [carId, setCarId] = useState(loadCarId);
   const [driving, setDriving] = useState(false);
   const [callIndex, setCallIndex] = useState(-1);
-  const [callPhase, setCallPhase] = useState<"idle" | "reported" | "dispatched" | "resolved">("idle");
+  const [callPhase, setCallPhase] = useState<"idle" | "reported" | "dispatched" | "resolved">(
+    "idle",
+  );
   const [helpCount, setHelpCount] = useState(0);
   const [siren, setSiren] = useState(false);
   const [diving, setDiving] = useState(false);
   const [camping, setCamping] = useState(false);
   const [thiefStep, setThiefStep] = useState(0);
   const call = callIndex < 0 ? null : WORLD_CALLS[callIndex]!;
-  const target = call?.kind === "police" && callPhase === "dispatched" ? thiefPosition(thiefStep) : call;
+  const target =
+    call?.kind === "police" && callPhase === "dispatched" ? thiefPosition(thiefStep) : call;
   const nearTarget = Boolean(target && distance(pos, target) <= 145);
   const emergencyVehicle = call ? CARS.find((car) => car.kind === call.kind) : undefined;
   const reportCall = () => {
@@ -131,18 +149,31 @@ export function Village() {
   const helpCall = () => {
     if (!call || callPhase !== "dispatched") return;
     const car = carById(carId);
-    if (!canHelp(call, pos, car.kind, driving) && !(call.kind === "police" && driving && car.kind === "police" && nearTarget)) {
+    if (
+      !canHelp(call, pos, car.kind, driving) &&
+      !(call.kind === "police" && driving && car.kind === "police" && nearTarget)
+    ) {
       setMessage("사건 장소까지 파란 길을 따라가고, 알맞은 출동 차량을 타야 해!");
       return;
     }
     const next = helpProgress(call, helpCount);
     setHelpCount(next);
     if (next < call.needed) {
-      setMessage("소방차 물줄기 발사! 불꽃이 " + (call.needed - next) + "개 남았어. 물 뿌리기를 다시 누르자!");
+      setMessage(
+        "소방차 물줄기 발사! 불꽃이 " +
+          (call.needed - next) +
+          "개 남았어. 물 뿌리기를 다시 누르자!",
+      );
     } else {
       setCallPhase("resolved");
       setSiren(false);
-      setMessage(call.kind === "fire" ? "불을 모두 껐어! 사람들도 안전하게 대피했어." : call.kind === "police" ? "도둑을 붙잡았어! 시장이 다시 평화로워졌어." : "도움이 필요한 사람을 구조대가 안전하게 도왔어! 잘했어.");
+      setMessage(
+        call.kind === "fire"
+          ? "불을 모두 껐어! 사람들도 안전하게 대피했어."
+          : call.kind === "police"
+            ? "도둑을 붙잡았어! 시장이 다시 평화로워졌어."
+            : "도움이 필요한 사람을 구조대가 안전하게 도왔어! 잘했어.",
+      );
     }
   };
   const [facing, setFacing] = useState(1);
@@ -155,19 +186,32 @@ export function Village() {
   const nearDrawing = Math.hypot(pos.x - 5010, pos.y - 520) < 110;
   const interact = () => {
     if (!ready || mini || drawing || garageOpen) return;
-    if (call && callPhase === "dispatched" && nearTarget) { helpCall(); return; }
+    if (call && callPhase === "dispatched" && nearTarget) {
+      helpCall();
+      return;
+    }
     if (diving) {
       const shore = leaveLake(pos);
-      setPos(shore); returnPosition = shore; setDiving(false);
-      setMessage("물속 탐험을 마치고 안전하게 호숫가로 나왔어!"); return;
+      setPos(shore);
+      returnPosition = shore;
+      setDiving(false);
+      setMessage("물속 탐험을 마치고 안전하게 호숫가로 나왔어!");
+      return;
     }
     if (isNearCamp(pos) && !driving) {
       setCamping((v) => !v);
-      setMessage(camping ? "캠핑을 정리했어. 다음에는 어디로 갈까?" : "텐트를 치고 캠핑을 시작했어!"); return;
+      setMessage(
+        camping ? "캠핑을 정리했어. 다음에는 어디로 갈까?" : "텐트를 치고 캠핑을 시작했어!",
+      );
+      return;
     }
     if (isNearLake(pos) && !driving) {
-      const lakePos = enterLake(pos); setPos(lakePos); returnPosition = lakePos;
-      setDiving(true); setMessage("잠수 시작! 조이스틱으로 호수 속을 헤엄쳐 보자."); return;
+      const lakePos = enterLake(pos);
+      setPos(lakePos);
+      returnPosition = lakePos;
+      setDiving(true);
+      setMessage("잠수 시작! 조이스틱으로 호수 속을 헤엄쳐 보자.");
+      return;
     }
     if (nearDrawing) {
       setDrawing(true);
@@ -444,7 +488,16 @@ export function Village() {
               </g>
             ))}
           </svg>
-          <WorldScenes player={pos} call={call} phase={callPhase} progress={helpCount} thiefStep={thiefStep} siren={siren} diving={diving} camping={camping} />
+          <WorldScenes
+            player={pos}
+            call={call}
+            phase={callPhase}
+            progress={helpCount}
+            thiefStep={thiefStep}
+            siren={siren}
+            diving={diving}
+            camping={camping}
+          />
           {PORTALS.map((g) => (
             <div
               className={`adv-gate ${nearby?.id === g.id ? "near" : ""}`}
@@ -495,7 +548,9 @@ export function Village() {
             style={{ left: pos.x, top: pos.y }}
           >
             <div style={{ transform: `scaleX(${facing})` }}>
-              {diving ? <span className="hj-diver">🤿</span> : driving ? (
+              {diving ? (
+                <span className="hj-diver">🤿</span>
+              ) : driving ? (
                 <CarArt car={carById(carId)} size={98} />
               ) : (
                 <Mascot outfit={state.outfit} small />
@@ -505,21 +560,80 @@ export function Village() {
           </div>
         </div>
         <div className="hj-live-board" role="status">
-          <button onClick={reportCall}>☎️ {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}</button>
-          {call && callPhase !== "resolved" && <>
-            <strong>{call.report}</strong>
-            {callPhase === "reported" && <button onClick={dispatchCall}>🚨 {STATIONS[call.kind].label}에서 출동</button>}
-            {callPhase === "dispatched" && <>
-              <small>목적지까지 {Math.round(target ? distance(pos, target) : 0)}m · {target ? routeDirection(pos, target) : ""}</small>
-              <button onClick={() => {setSiren(v => !v);setMessage("사이렌을 " + (siren ? "껐어." : "켰어!"));}}>{siren ? "🔕 사이렌 끄기" : "🚨 사이렌 켜기"}</button>
-              {call.kind === "police" && <button onClick={() => setThiefStep(p => p + 1)}>🏃 도둑 추적</button>}
-              {nearTarget && <button onClick={helpCall}>{call.kind === "fire" ? "💦 물 뿌리기" : call.kind === "police" ? "🚓 도둑 잡기" : "🚑 사람 돕기"}</button>}
-            </>}
-          </>}
+          <button onClick={reportCall}>
+            ☎️ {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}
+          </button>
+          {call && callPhase !== "resolved" && (
+            <>
+              <strong>{call.report}</strong>
+              {callPhase === "reported" && (
+                <button onClick={dispatchCall}>🚨 {STATIONS[call.kind].label}에서 출동</button>
+              )}
+              {callPhase === "dispatched" && (
+                <>
+                  <small>
+                    목적지까지 {Math.round(target ? distance(pos, target) : 0)}m ·{" "}
+                    {target ? routeDirection(pos, target) : ""}
+                  </small>
+                  <button
+                    onClick={() => {
+                      setSiren((v) => !v);
+                      setMessage("사이렌을 " + (siren ? "껐어." : "켰어!"));
+                    }}
+                  >
+                    {siren ? "🔕 사이렌 끄기" : "🚨 사이렌 켜기"}
+                  </button>
+                  {call.kind === "police" && (
+                    <button onClick={() => setThiefStep((p) => p + 1)}>🏃 도둑 추적</button>
+                  )}
+                  {nearTarget && (
+                    <button onClick={helpCall}>
+                      {call.kind === "fire"
+                        ? "💦 물 뿌리기"
+                        : call.kind === "police"
+                          ? "🚓 도둑 잡기"
+                          : "🚑 사람 돕기"}
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          )}
           {callPhase === "resolved" && <strong>✅ 사건 해결! 새로운 신고를 받아 볼까?</strong>}
-          {!driving && isNearLake(pos) && <button onClick={() => {const p=enterLake(pos);setPos(p);returnPosition=p;setDiving(true);}}>🤿 호수 잠수</button>}
-          {diving && <button onClick={() => {const p=leaveLake(pos);setPos(p);returnPosition=p;setDiving(false);}}>호숫가로 나오기</button>}
-          {!driving && isNearCamp(pos) && <button onClick={() => {setCamping(v=>!v);setMessage("숲속 캠핑을 즐겨 보자!");}}>{camping ? "⛺ 캠핑 정리" : "⛺ 텐트 치기"}</button>}
+          {!driving && isNearLake(pos) && (
+            <button
+              onClick={() => {
+                const p = enterLake(pos);
+                setPos(p);
+                returnPosition = p;
+                setDiving(true);
+              }}
+            >
+              🤿 호수 잠수
+            </button>
+          )}
+          {diving && (
+            <button
+              onClick={() => {
+                const p = leaveLake(pos);
+                setPos(p);
+                returnPosition = p;
+                setDiving(false);
+              }}
+            >
+              호숫가로 나오기
+            </button>
+          )}
+          {!driving && isNearCamp(pos) && (
+            <button
+              onClick={() => {
+                setCamping((v) => !v);
+                setMessage("숲속 캠핑을 즐겨 보자!");
+              }}
+            >
+              {camping ? "⛺ 캠핑 정리" : "⛺ 텐트 치기"}
+            </button>
+          )}
         </div>
         <div className="adv-location">
           {nearDrawing ? "별자리 공방" : (district?.name ?? "우리 마을")}
@@ -598,8 +712,10 @@ export function Village() {
             <button
               className="hj-car-mode"
               onClick={() => {
-                if (driving) { setDriving(false); setSiren(false); }
-                else setGarageOpen(true);
+                if (driving) {
+                  setDriving(false);
+                  setSiren(false);
+                } else setGarageOpen(true);
               }}
             >
               {driving ? "차에서 내리기" : "자동차 타기"}
@@ -609,15 +725,27 @@ export function Village() {
                 지도
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
-                {diving ? "물 밖으로 나오기" : call && callPhase === "dispatched" && nearTarget ? (call.kind === "fire" ? "물 뿌리기" : call.kind === "police" ? "도둑 잡기" : "사람 돕기") : isNearCamp(pos) && !driving ? "캠핑하기" : isNearLake(pos) && !driving ? "잠수하기" : nearDrawing
-                  ? "별자리 그리기"
-                  : friend
-                    ? `${friend.friend} · 이야기`
-                    : nearby
-                      ? `${nearby.name} · 시작`
-                      : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
-                        ? "보리 돌보기"
-                        : "놀이 · 대화"}
+                {diving
+                  ? "물 밖으로 나오기"
+                  : call && callPhase === "dispatched" && nearTarget
+                    ? call.kind === "fire"
+                      ? "물 뿌리기"
+                      : call.kind === "police"
+                        ? "도둑 잡기"
+                        : "사람 돕기"
+                    : isNearCamp(pos) && !driving
+                      ? "캠핑하기"
+                      : isNearLake(pos) && !driving
+                        ? "잠수하기"
+                        : nearDrawing
+                          ? "별자리 그리기"
+                          : friend
+                            ? `${friend.friend} · 이야기`
+                            : nearby
+                              ? `${nearby.name} · 시작`
+                              : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
+                                ? "보리 돌보기"
+                                : "놀이 · 대화"}
               </button>
             </div>
           </div>
