@@ -49,3 +49,30 @@ test("run settlement is idempotent and clear bonus is paid once", () => {
   assert.equal(once.runs, 1);
   assert.deepEqual(twice, once);
 });
+
+test("food truck sales are idempotent and persist without harming old v2 saves", () => {
+  const initial = migrateSave({ money: 70, runnerBest: 320, ownedFurniture: ["bed"] });
+  assert.deepEqual(initial.settledFoodSales, []);
+  const first = reduceWorld(initial, { type: "sell-food", id: "order-1", foodId: "pizza" });
+  assert.equal(first.money, 95);
+  assert.deepEqual(
+    reduceWorld(first, { type: "sell-food", id: "order-1", foodId: "pizza" }),
+    first,
+  );
+  assert.deepEqual(
+    reduceWorld(first, { type: "sell-food", id: "order-2", foodId: "invalid" }),
+    first,
+  );
+  const resumed = migrateSave(first);
+  assert.equal(resumed.money, 95);
+  assert.equal(resumed.runnerBest, 320);
+  assert.deepEqual(resumed.settledFoodSales, ["order-1"]);
+});
+test("undersea rewards are earned once per treasure and survive save migration", () => {
+  const initial = migrateSave({ money: 0 });
+  const first = reduceWorld(initial, { type: "explore-sea", id: "gold-shell" });
+  assert.equal(first.money, 35);
+  assert.deepEqual(reduceWorld(first, { type: "explore-sea", id: "gold-shell" }), first);
+  assert.deepEqual(reduceWorld(first, { type: "explore-sea", id: "invalid" }), first);
+  assert.deepEqual(migrateSave(first).visitedSeaTreasures, ["gold-shell"]);
+});

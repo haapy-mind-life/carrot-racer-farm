@@ -17,6 +17,21 @@ import { Garage, loadCarId, saveCarId } from "./Garage";
 import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
+import { LifeWorldScene } from "./LifeWorldScene";
+import {
+  FOOD_MENU,
+  LIFE_MAPS,
+  LIFE_SPOTS,
+  LIFE_REGION_LABELS,
+  nearSpot,
+  nearbyTreasure,
+  nextFoodOrder,
+  freshFoodOrderId,
+  stepLifePlayer,
+  type LifeRegion,
+  type FoodId,
+  type FoodOrder,
+} from "@/game/life-world";
 import { playGameSiren } from "@/game/siren";
 import {
   WORLD_CALLS,
@@ -106,6 +121,137 @@ export function Village() {
   const [mapOpen, setMapOpen] = useState(false);
   const [message, setMessage] = useState("현준아, 오늘은 어디로 가볼까? 길을 따라 걸어가 봐!");
   const [walking, setWalking] = useState(false);
+  const [region, setRegion] = useState<LifeRegion>("village");
+  const [lifePos, setLifePos] = useState<Point>({ ...LIFE_SPOTS.coastArrival });
+  const [holding, setHolding] = useState<FoodId | null>(null);
+  const [robotFollowing, setRobotFollowing] = useState(false);
+  const [submarine, setSubmarine] = useState(false);
+  const [orderIndex, setOrderIndex] = useState(0);
+  const [order, setOrder] = useState<FoodOrder>(() => nextFoodOrder(0, freshFoodOrderId()));
+  const [truckOpen, setTruckOpen] = useState(false);
+  const saleBusy = useRef(false);
+  const nearLife = (target: Point, radius = 180) => nearSpot(lifePos, target, radius);
+  const travelTo = (next: Exclude<LifeRegion, "village">, point: Point) => {
+    setRegion(next);
+    setLifePos({ ...point });
+    setDriving(false);
+    setDiving(false);
+    setTruckOpen(false);
+    setMapOpen(false);
+    setSubmarine(next === "deep-sea");
+    setMessage(LIFE_REGION_LABELS[next] + "에 도착했어! 직접 움직여 탐험하자.");
+  };
+  const leaveLife = () => {
+    setRegion("village");
+    setTruckOpen(false);
+    setSubmarine(false);
+    setPos({ x: LIFE_SPOTS.villageGate.x, y: LIFE_SPOTS.villageGate.y });
+    returnPosition = { ...LIFE_SPOTS.villageGate };
+    setMessage("열 개 마을로 돌아왔어!");
+  };
+  const sellPreparedFood = () => {
+    if (
+      saleBusy.current ||
+      order.phase !== "prepared" ||
+      holding !== order.foodId ||
+      !nearLife(LIFE_SPOTS.foodCustomer, 220)
+    )
+      return;
+    saleBusy.current = true;
+    dispatch({ type: "sell-food", id: order.id, foodId: order.foodId });
+    setHolding(null);
+    const next = orderIndex + 1;
+    setOrderIndex(next);
+    setOrder(nextFoodOrder(next, freshFoodOrderId()));
+    setMessage("음식을 손님에게 전달했어! 별코인을 벌었어!");
+    window.setTimeout(() => {
+      saleBusy.current = false;
+    }, 300);
+  };
+  const doLifeAction = () => {
+    if (region === "coast") {
+      if (nearLife(LIFE_SPOTS.coastExit)) {
+        leaveLife();
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.mansionDoor, 280)) {
+        travelTo("mansion", LIFE_SPOTS.mansionInside);
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.foodCustomer, 220) && order.phase === "prepared") {
+        sellPreparedFood();
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.foodTruck, 275)) {
+        setTruckOpen(true);
+        setMessage("푸드트럭에서 음식을 골라 직접 손님에게 가져다주자!");
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.harbor, 290)) {
+        travelTo("deep-sea", LIFE_SPOTS.seaStart);
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.robot, 240)) {
+        setRobotFollowing((v) => !v);
+        setMessage(
+          "아빠 로봇: " + (robotFollowing ? "다음에 또 놀자!" : "현준아, 같이 놀러 가자!"),
+        );
+        return;
+      }
+    }
+    if (region === "mansion") {
+      if (nearLife(LIFE_SPOTS.mansionExit, 260)) {
+        travelTo("coast", { x: LIFE_SPOTS.mansionDoor.x, y: LIFE_SPOTS.mansionDoor.y + 190 });
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.mansionKitchen, 300)) {
+        setHolding("pizza");
+        setMessage("피자를 손에 들었어! 식탁으로 가서 먹어 보자.");
+        return;
+      }
+      if (nearLife(LIFE_SPOTS.mansionDining, 310) && holding) {
+        setHolding(null);
+        setMessage("냠냠! 맛있게 먹었어!");
+        return;
+      }
+    }
+    if (region === "deep-sea") {
+      if (nearLife(LIFE_SPOTS.seaReturn, 310)) {
+        travelTo("coast", LIFE_SPOTS.harbor);
+        return;
+      }
+      const treasure = nearbyTreasure(lifePos);
+      if (treasure) {
+        if (!state.visitedSeaTreasures.includes(treasure.id))
+          dispatch({ type: "explore-sea", id: treasure.id });
+        setMessage(treasure.name + "을 발견했어! 바닷속 탐험 성공!");
+        return;
+      }
+    }
+    setMessage("조이스틱으로 가까이 다가가서 행동 버튼을 눌러 봐!");
+  };
+  const lifeActionLabel = () => {
+    if (region === "coast") {
+      if (nearLife(LIFE_SPOTS.coastExit)) return "마을로 돌아가기";
+      if (nearLife(LIFE_SPOTS.mansionDoor, 280)) return "대왕집 들어가기";
+      if (nearLife(LIFE_SPOTS.foodCustomer, 220) && order.phase === "prepared")
+        return "손님에게 음식 주기";
+      if (nearLife(LIFE_SPOTS.foodTruck, 275)) return "푸드트럭 장사";
+      if (nearLife(LIFE_SPOTS.harbor, 290)) return "잠수함 타기";
+      if (nearLife(LIFE_SPOTS.robot, 240))
+        return robotFollowing ? "로봇 쉬게 하기" : "아빠 로봇 따라오기";
+    }
+    if (region === "mansion") {
+      if (nearLife(LIFE_SPOTS.mansionExit, 260)) return "마당으로 나가기";
+      if (nearLife(LIFE_SPOTS.mansionKitchen, 300)) return "음식 집기";
+      if (nearLife(LIFE_SPOTS.mansionDining, 310) && holding) return "음식 먹기";
+    }
+    if (region === "deep-sea") {
+      if (nearLife(LIFE_SPOTS.seaReturn, 310)) return "항구로 돌아가기";
+      if (nearbyTreasure(lifePos)) return "바닷속 보물 발견!";
+    }
+    return "주변 살펴보기";
+  };
   const [garageOpen, setGarageOpen] = useState(false);
   const [carId, setCarId] = useState(loadCarId);
   const [driving, setDriving] = useState(false);
@@ -188,6 +334,14 @@ export function Village() {
   const nearDrawing = Math.hypot(pos.x - 5010, pos.y - 520) < 110;
   const interact = () => {
     if (!ready || mini || drawing || garageOpen) return;
+    if (region !== "village") {
+      doLifeAction();
+      return;
+    }
+    if (!driving && nearSpot(pos, LIFE_SPOTS.villageGate, 205)) {
+      travelTo("coast", LIFE_SPOTS.coastArrival);
+      return;
+    }
     if (call && callPhase === "dispatched" && nearTarget) {
       helpCall();
       return;
@@ -250,7 +404,10 @@ export function Village() {
     }, 12000);
     return () => window.clearTimeout(timeout);
   }, []);
-  const movement = useMovement(!mini && !drawing && !mapOpen && !garageOpen, interact);
+  const movement = useMovement(
+    !mini && !drawing && !mapOpen && !garageOpen && !truckOpen,
+    interact,
+  );
   const direction = useRef(movement.direction);
   direction.current = movement.direction;
   useEffect(() => {
@@ -262,7 +419,7 @@ export function Village() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (mini || drawing || mapOpen || garageOpen) return;
+    if (mini || drawing || mapOpen || garageOpen || truckOpen) return;
     let raf = 0,
       last = 0;
     const loop = (now: number) => {
@@ -271,7 +428,8 @@ export function Village() {
       setWalking(moving);
       if (d.x) setFacing(d.x > 0 ? 1 : -1);
       const dt = last ? (now - last) / 1000 : 0;
-      if (moving)
+      if (moving && region !== "village") setLifePos((p) => stepLifePlayer(region, p, d, dt));
+      if (moving && region === "village")
         setPos((p) => {
           const next = diving ? diveStep(p, d, dt) : stepPlayer(p, d, dt * (driving ? 1.48 : 1));
           returnPosition = next;
@@ -282,8 +440,14 @@ export function Village() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mini, drawing, mapOpen, garageOpen, diving, driving]);
-  const camera = cameraAt(pos, size.w, size.h);
+  }, [mini, drawing, mapOpen, garageOpen, truckOpen, diving, driving, region]);
+  const camera =
+    region === "village"
+      ? cameraAt(pos, size.w, size.h)
+      : {
+          x: Math.max(0, Math.min(LIFE_MAPS[region].width - size.w, lifePos.x - size.w / 2)),
+          y: Math.max(0, Math.min(LIFE_MAPS[region].height - size.h, lifePos.y - size.h / 2)),
+        };
   return (
     <Shell
       active="home"
@@ -291,8 +455,15 @@ export function Village() {
       subtitle="열 개 마을을 한 바퀴! 왼쪽 조이스틱을 밀어 출발해요."
     >
       <div className="adv-toolbar">
-        <span>✦ 오늘의 모험은 네 마음대로</span>
-        <button onClick={() => setGarageOpen(true)}>🚗 자동차 100대</button>
+        <span>✦ 오늘의 모험은 네 마음대로 · {state.money} 별코인</span>
+        <button
+          onClick={() =>
+            region === "village" ? travelTo("coast", LIFE_SPOTS.coastArrival) : leaveLife()
+          }
+        >
+          🌊 {region === "village" ? "큰 바다 · 대왕집" : "마을로 돌아가기"}
+        </button>
+        <button onClick={() => setGarageOpen(true)}>🚗 자동차 120대</button>
         <button onClick={() => setMapOpen((v) => !v)} aria-expanded={mapOpen}>
           지도 {mapOpen ? "접기" : "보기"}
         </button>
@@ -306,356 +477,404 @@ export function Village() {
         <div
           className="adv-map"
           style={{
-            width: MAP.width,
-            height: MAP.height,
+            width: region === "village" ? MAP.width : LIFE_MAPS[region].width,
+            height: region === "village" ? MAP.height : LIFE_MAPS[region].height,
             transform: `translate(${-camera.x}px,${-camera.y}px)`,
           }}
         >
-          <svg
-            className="adv-terrain"
-            viewBox={`0 0 ${MAP.width} ${MAP.height}`}
-            aria-hidden="true"
-          >
-            <defs>
-              <pattern id="grass" width="95" height="83" patternUnits="userSpaceOnUse">
-                <rect width="95" height="83" fill="#d7e7b9" />
+          {region === "village" ? (
+            <>
+              <svg
+                className="adv-terrain"
+                viewBox={`0 0 ${MAP.width} ${MAP.height}`}
+                aria-hidden="true"
+              >
+                <defs>
+                  <pattern id="grass" width="95" height="83" patternUnits="userSpaceOnUse">
+                    <rect width="95" height="83" fill="#d7e7b9" />
+                    <path
+                      d="m20 30 3-6 3 6m44 37 3-5 3 5"
+                      fill="none"
+                      stroke="#bace9c"
+                      strokeWidth="2"
+                    />
+                    <circle cx="75" cy="22" r="2" fill="#f9f6d9" />
+                  </pattern>
+                </defs>
+                <rect width={MAP.width} height={MAP.height} fill="url(#grass)" />
                 <path
-                  d="m20 30 3-6 3 6m44 37 3-5 3 5"
+                  d="M2700 850H5600M0 850H90M3200 400V1500M4000 400V1500M5000 400V1500M3200 500H5100M3200 1350H5100"
+                  stroke="#f5e7ca"
+                  strokeWidth="100"
                   fill="none"
-                  stroke="#bace9c"
-                  strokeWidth="2"
                 />
-                <circle cx="75" cy="22" r="2" fill="#f9f6d9" />
-              </pattern>
-            </defs>
-            <rect width={MAP.width} height={MAP.height} fill="url(#grass)" />
-            <path
-              d="M2700 850H5600M0 850H90M3200 400V1500M4000 400V1500M5000 400V1500M3200 500H5100M3200 1350H5100"
-              stroke="#f5e7ca"
-              strokeWidth="100"
-              fill="none"
-            />
-            {VILLAGES.filter((v) => v.x > 2800).map((v) => (
-              <g key={v.id}>
-                <ellipse cx={v.x} cy={v.y - 90} rx="245" ry="155" fill={v.color} opacity="0.7" />
-                <text x={v.x} y={v.y - 235} textAnchor="middle" fontSize="30" fill="#40564d">
-                  {v.name}
-                </text>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <g
-                    key={i}
-                    transform={`translate(${v.x - 230 + (i % 6) * 90} ${v.y - 170 + Math.floor(i / 6) * 90})`}
-                  >
-                    {v.id === "apple" || v.id === "pineapple" ? (
-                      <>
-                        <rect x="-5" y="5" width="10" height="40" rx="4" fill="#b48f69" />
-                        <circle cy="-5" r="26" fill="#8cb589" />
-                        <circle
-                          cx="10"
-                          cy="-4"
-                          r="10"
-                          fill={v.id === "apple" ? "#e48a7c" : "#f1cf66"}
-                        />
-                      </>
-                    ) : (
-                      <path
-                        d="M0-22 18 0 0 24-18 0Z"
-                        fill={
-                          v.id === "diamond"
-                            ? "#89bfe2"
-                            : v.id === "emerald"
-                              ? "#58aa8d"
-                              : "#78b8c0"
-                        }
-                        stroke="white"
-                        strokeWidth="3"
-                      />
-                    )}
+                {VILLAGES.filter((v) => v.x > 2800).map((v) => (
+                  <g key={v.id}>
+                    <ellipse
+                      cx={v.x}
+                      cy={v.y - 90}
+                      rx="245"
+                      ry="155"
+                      fill={v.color}
+                      opacity="0.7"
+                    />
+                    <text x={v.x} y={v.y - 235} textAnchor="middle" fontSize="30" fill="#40564d">
+                      {v.name}
+                    </text>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <g
+                        key={i}
+                        transform={`translate(${v.x - 230 + (i % 6) * 90} ${v.y - 170 + Math.floor(i / 6) * 90})`}
+                      >
+                        {v.id === "apple" || v.id === "pineapple" ? (
+                          <>
+                            <rect x="-5" y="5" width="10" height="40" rx="4" fill="#b48f69" />
+                            <circle cy="-5" r="26" fill="#8cb589" />
+                            <circle
+                              cx="10"
+                              cy="-4"
+                              r="10"
+                              fill={v.id === "apple" ? "#e48a7c" : "#f1cf66"}
+                            />
+                          </>
+                        ) : (
+                          <path
+                            d="M0-22 18 0 0 24-18 0Z"
+                            fill={
+                              v.id === "diamond"
+                                ? "#89bfe2"
+                                : v.id === "emerald"
+                                  ? "#58aa8d"
+                                  : "#78b8c0"
+                            }
+                            stroke="white"
+                            strokeWidth="3"
+                          />
+                        )}
+                      </g>
+                    ))}
                   </g>
                 ))}
-              </g>
-            ))}
-            <text x="5010" y="370" textAnchor="middle" fontSize="30" fill="#6c6395">
-              별자리 공방
-            </text>
-            <circle cx="5010" cy="430" r="48" fill="#b7abd8" />
-            <text x="5010" y="448" textAnchor="middle" fontSize="50" fill="#fff2c1">
-              ★
-            </text>
-            <ellipse cx="530" cy="1270" rx="350" ry="290" fill="#c5dca9" />
-            <ellipse cx="1270" cy="360" rx="400" ry="230" fill="#c7dfc2" />
-            <path
-              d="M90 850H1600V620H2550V1100H2030M2550 850H2700M1350 120V1680M480 850V540M2380 620V520M550 850V1320M1250 850V390M2225 1100V1450"
-              fill="none"
-              stroke="#ecdbb8"
-              strokeWidth="110"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M90 850H1600V620H2550V1100H2030M2550 850H2700M1350 120V1680"
-              fill="none"
-              stroke="#f5e7ca"
-              strokeWidth="78"
-              strokeLinecap="round"
-            />
-            <circle cx="1350" cy="850" r="155" fill="#f5e7ca" />
-            <circle cx="1350" cy="815" r="68" fill="#e6d6be" />
-            <circle cx="1350" cy="808" r="55" fill="#a7d6dc" />
-            <circle cx="1350" cy="802" r="33" fill="#c8edf0" />
-            <path
-              d="M1350 802v-43m-14 20q14-25 28 0"
-              fill="none"
-              stroke="#fafff4"
-              strokeWidth="7"
-              strokeLinecap="round"
-            />
-            <rect
-              x="1740"
-              y="710"
-              width="650"
-              height="310"
-              rx="100"
-              fill="#92cdd5"
-              stroke="#bcdbb3"
-              strokeWidth="22"
-            />
-            <path
-              d="M1800 810q60-20 120 0m180 100q65-20 130 0m-340 20q45-10 90 0"
-              stroke="#d3edf0"
-              strokeWidth="5"
-              fill="none"
-            />
-            <rect x="1985" y="970" width="100" height="98" rx="8" fill="#c49d79" />
-            {[986, 1006, 1026, 1046].map((y) => (
-              <path key={y} d={`M1985 ${y}h100`} stroke="#a78165" strokeWidth="3" />
-            ))}
-            <Cottage x={360} y={330} color="#df9e91" label="HOME" />
-            <Cottage x={2100} y={1170} color="#92b8a0" label="FARM" />
-            <g transform="translate(2260 300)">
-              <rect x="5" y="15" width="30" height="155" rx="10" fill="#f2bd70" />
-              <rect x="205" y="15" width="30" height="155" rx="10" fill="#f2bd70" />
-              <rect
-                y="0"
-                width="240"
-                height="70"
-                rx="20"
-                fill="#fdf6dc"
-                stroke="#edbf7f"
-                strokeWidth="6"
-              />
-              <text x="120" y="44" textAnchor="middle" fill="#73664e" fontSize="24">
-                PARK RUNNER
-              </text>
-              <path d="M35 90h170" stroke="#fffdf2" strokeWidth="18" strokeDasharray="18 18" />
-              <path
-                d="M35 90h170"
-                stroke="#879a8c"
-                strokeWidth="18"
-                strokeDasharray="18 18"
-                strokeDashoffset="18"
-              />
-            </g>
-            {trees.map((t, i) => (
-              <g key={i} transform={`translate(${t.x} ${t.y})`}>
-                <ellipse cy="35" rx="35" ry="12" fill="#597b4120" />
-                <rect x="-7" y="0" width="14" height="40" rx="5" fill="#b79c79" />
-                <circle cy="-10" r="39" fill={i % 2 ? "#9abf8e" : "#a8c790"} />
-                <circle cx="-20" r="27" fill="#b8d29c" />
-                <circle cx="22" cy="-3" r="25" fill="#a2c189" />
-                {i % 3 === 0 && <circle cx="16" cy="-20" r="6" fill="#efd69b" />}
-              </g>
-            ))}
-            <text x="550" y="1120" textAnchor="middle" fontSize="32" fill="#688756">
-              토토의 보물 숲
-            </text>
-            <text x="1250" y="240" textAnchor="middle" fontSize="32" fill="#668a72">
-              별빛 미니 파크
-            </text>
-            <text x="2065" y="820" textAnchor="middle" fontSize="28" fill="#4f93a1">
-              반짝 호수
-            </text>
-            <g transform="translate(1110 280)">
-              <path
-                d="M0 70 25 0h80l25 70M25 0v55m80-55v55"
-                stroke="#be9b7e"
-                strokeWidth="8"
-                fill="none"
-              />
-              <path d="M30 57h28m18 0h28" stroke="#e5a995" strokeWidth="9" />
-            </g>
-            <g transform="translate(500 1180)">
-              <rect width="90" height="65" rx="12" fill="#c9a072" />
-              <path d="M0 25h90M45 0v65" stroke="#f9df9b" strokeWidth="8" />
-              <circle cx="45" cy="32" r="10" fill="#f4cf74" />
-            </g>
-            {[0, 1, 2].map((i) => (
-              <g key={i} transform={`translate(${2120 + i * 76} 1470)`}>
-                <rect width="55" height="100" rx="15" fill="#c0a17b" />
-                {[20, 50, 80].map((y) => (
-                  <path
-                    key={y}
-                    d={`M28 ${y + 10}v-15m0 8q-20 0-15-10 15 0 15 10 0-10 15-10 5 10-15 10`}
-                    stroke="#8db685"
-                    strokeWidth="5"
-                    fill="#a9c58e"
-                  />
+                <text x="5010" y="370" textAnchor="middle" fontSize="30" fill="#6c6395">
+                  별자리 공방
+                </text>
+                <circle cx="5010" cy="430" r="48" fill="#b7abd8" />
+                <text x="5010" y="448" textAnchor="middle" fontSize="50" fill="#fff2c1">
+                  ★
+                </text>
+                <ellipse cx="530" cy="1270" rx="350" ry="290" fill="#c5dca9" />
+                <ellipse cx="1270" cy="360" rx="400" ry="230" fill="#c7dfc2" />
+                <path
+                  d="M90 850H1600V620H2550V1100H2030M2550 850H2700M1350 120V1680M480 850V540M2380 620V520M550 850V1320M1250 850V390M2225 1100V1450"
+                  fill="none"
+                  stroke="#ecdbb8"
+                  strokeWidth="110"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M90 850H1600V620H2550V1100H2030M2550 850H2700M1350 120V1680"
+                  fill="none"
+                  stroke="#f5e7ca"
+                  strokeWidth="78"
+                  strokeLinecap="round"
+                />
+                <circle cx="1350" cy="850" r="155" fill="#f5e7ca" />
+                <circle cx="1350" cy="815" r="68" fill="#e6d6be" />
+                <circle cx="1350" cy="808" r="55" fill="#a7d6dc" />
+                <circle cx="1350" cy="802" r="33" fill="#c8edf0" />
+                <path
+                  d="M1350 802v-43m-14 20q14-25 28 0"
+                  fill="none"
+                  stroke="#fafff4"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                />
+                <rect
+                  x="1740"
+                  y="710"
+                  width="650"
+                  height="310"
+                  rx="100"
+                  fill="#92cdd5"
+                  stroke="#bcdbb3"
+                  strokeWidth="22"
+                />
+                <path
+                  d="M1800 810q60-20 120 0m180 100q65-20 130 0m-340 20q45-10 90 0"
+                  stroke="#d3edf0"
+                  strokeWidth="5"
+                  fill="none"
+                />
+                <rect x="1985" y="970" width="100" height="98" rx="8" fill="#c49d79" />
+                {[986, 1006, 1026, 1046].map((y) => (
+                  <path key={y} d={`M1985 ${y}h100`} stroke="#a78165" strokeWidth="3" />
                 ))}
-              </g>
-            ))}
-          </svg>
-          <WorldScenes
-            player={pos}
-            call={call}
-            phase={callPhase}
-            progress={helpCount}
-            thiefStep={thiefStep}
-            siren={siren}
-            diving={diving}
-            camping={camping}
-          />
-          {PORTALS.map((g) => (
-            <div
-              className={`adv-gate ${nearby?.id === g.id ? "near" : ""}`}
-              key={g.id}
-              style={{ left: g.x, top: g.y }}
-            >
-              <span>
-                {g.id === "runner"
-                  ? "달리기"
-                  : g.id === "house"
-                    ? "꾸미기"
-                    : g.id === "farm"
-                      ? "키우기"
-                      : "놀기"}
-              </span>
-              <b>{g.name}</b>
-              <i />
-            </div>
-          ))}
-          {VILLAGES.map((v, friendIndex) => (
-            <button
-              key={v.id}
-              className="adv-friend adv-npc"
-              style={{ left: v.x, top: v.y }}
-              onClick={() =>
-                setMessage(
-                  `${v.friend}: ${Math.hypot(v.x - pos.x, v.y - pos.y) < 105 ? v.words : "가까이 와서 이야기하자! 왼쪽 조이스틱을 밀어 봐."}`,
-                )
-              }
-              aria-label={`${v.friend} · 이야기`}
-            >
-              <FriendArt index={friendIndex} />
-              <b>{v.friend}</b>
-              <small>{v.name}</small>
-            </button>
-          ))}
-          <div className={`adv-gate ${nearDrawing ? "near" : ""}`} style={{ left: 5010, top: 520 }}>
-            <span>손가락 · 펜 놀이</span>
-            <b>별자리 공방</b>
-            <i />
-          </div>
-          <div className="adv-dog" style={{ left: 1420, top: 1030 }}>
-            <span>🐶</span>
-            <b>보리</b>
-          </div>
-          <div
-            className={`adv-player ${walking ? "walking" : ""}`}
-            style={{ left: pos.x, top: pos.y }}
-          >
-            <div style={{ transform: `scaleX(${facing})` }}>
-              {diving ? (
-                <span className="hj-diver">🤿</span>
-              ) : driving ? (
-                <CarArt car={carById(carId)} size={98} />
-              ) : (
-                <Mascot outfit={state.outfit} small />
-              )}
-            </div>
-            <b>{driving ? "현준 🚗" : "현준"}</b>
-          </div>
-        </div>
-        <div className="hj-live-board" role="status">
-          <button onClick={reportCall}>
-            ☎️ {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}
-          </button>
-          {call && callPhase !== "resolved" && (
-            <>
-              <strong>{call.report}</strong>
-              {callPhase === "reported" && (
-                <button onClick={dispatchCall}>🚨 {STATIONS[call.kind].label}에서 출동</button>
-              )}
-              {callPhase === "dispatched" && (
-                <>
-                  <small>
-                    목적지까지 {Math.round(target ? distance(pos, target) : 0)}m ·{" "}
-                    {target ? routeDirection(pos, target) : ""}
-                  </small>
-                  <button
-                    onClick={() => {
-                      setSiren((v) => !v);
-                      if (!siren) playGameSiren();
-                      setMessage("사이렌을 " + (siren ? "껐어." : "켰어!"));
-                    }}
-                  >
-                    {siren ? "🔕 사이렌 끄기" : "🚨 사이렌 켜기"}
-                  </button>
-                  {call.kind === "police" && (
-                    <button onClick={() => setThiefStep((p) => p + 1)}>🏃 도둑 추적</button>
+                <Cottage x={360} y={330} color="#df9e91" label="HOME" />
+                <Cottage x={2100} y={1170} color="#92b8a0" label="FARM" />
+                <g transform="translate(2260 300)">
+                  <rect x="5" y="15" width="30" height="155" rx="10" fill="#f2bd70" />
+                  <rect x="205" y="15" width="30" height="155" rx="10" fill="#f2bd70" />
+                  <rect
+                    y="0"
+                    width="240"
+                    height="70"
+                    rx="20"
+                    fill="#fdf6dc"
+                    stroke="#edbf7f"
+                    strokeWidth="6"
+                  />
+                  <text x="120" y="44" textAnchor="middle" fill="#73664e" fontSize="24">
+                    PARK RUNNER
+                  </text>
+                  <path d="M35 90h170" stroke="#fffdf2" strokeWidth="18" strokeDasharray="18 18" />
+                  <path
+                    d="M35 90h170"
+                    stroke="#879a8c"
+                    strokeWidth="18"
+                    strokeDasharray="18 18"
+                    strokeDashoffset="18"
+                  />
+                </g>
+                {trees.map((t, i) => (
+                  <g key={i} transform={`translate(${t.x} ${t.y})`}>
+                    <ellipse cy="35" rx="35" ry="12" fill="#597b4120" />
+                    <rect x="-7" y="0" width="14" height="40" rx="5" fill="#b79c79" />
+                    <circle cy="-10" r="39" fill={i % 2 ? "#9abf8e" : "#a8c790"} />
+                    <circle cx="-20" r="27" fill="#b8d29c" />
+                    <circle cx="22" cy="-3" r="25" fill="#a2c189" />
+                    {i % 3 === 0 && <circle cx="16" cy="-20" r="6" fill="#efd69b" />}
+                  </g>
+                ))}
+                <text x="550" y="1120" textAnchor="middle" fontSize="32" fill="#688756">
+                  토토의 보물 숲
+                </text>
+                <text x="1250" y="240" textAnchor="middle" fontSize="32" fill="#668a72">
+                  별빛 미니 파크
+                </text>
+                <text x="2065" y="820" textAnchor="middle" fontSize="28" fill="#4f93a1">
+                  반짝 호수
+                </text>
+                <g transform="translate(1110 280)">
+                  <path
+                    d="M0 70 25 0h80l25 70M25 0v55m80-55v55"
+                    stroke="#be9b7e"
+                    strokeWidth="8"
+                    fill="none"
+                  />
+                  <path d="M30 57h28m18 0h28" stroke="#e5a995" strokeWidth="9" />
+                </g>
+                <g transform="translate(500 1180)">
+                  <rect width="90" height="65" rx="12" fill="#c9a072" />
+                  <path d="M0 25h90M45 0v65" stroke="#f9df9b" strokeWidth="8" />
+                  <circle cx="45" cy="32" r="10" fill="#f4cf74" />
+                </g>
+                {[0, 1, 2].map((i) => (
+                  <g key={i} transform={`translate(${2120 + i * 76} 1470)`}>
+                    <rect width="55" height="100" rx="15" fill="#c0a17b" />
+                    {[20, 50, 80].map((y) => (
+                      <path
+                        key={y}
+                        d={`M28 ${y + 10}v-15m0 8q-20 0-15-10 15 0 15 10 0-10 15-10 5 10-15 10`}
+                        stroke="#8db685"
+                        strokeWidth="5"
+                        fill="#a9c58e"
+                      />
+                    ))}
+                  </g>
+                ))}
+              </svg>
+              <WorldScenes
+                player={pos}
+                call={call}
+                phase={callPhase}
+                progress={helpCount}
+                thiefStep={thiefStep}
+                siren={siren}
+                diving={diving}
+                camping={camping}
+              />
+              <div
+                className="adv-gate"
+                style={{ left: LIFE_SPOTS.villageGate.x, top: LIFE_SPOTS.villageGate.y }}
+              >
+                <span>새로운 세계</span>
+                <b>🌊 큰 바다 · 대왕집</b>
+                <i />
+              </div>
+              {PORTALS.map((g) => (
+                <div
+                  className={`adv-gate ${nearby?.id === g.id ? "near" : ""}`}
+                  key={g.id}
+                  style={{ left: g.x, top: g.y }}
+                >
+                  <span>
+                    {g.id === "runner"
+                      ? "달리기"
+                      : g.id === "house"
+                        ? "꾸미기"
+                        : g.id === "farm"
+                          ? "키우기"
+                          : "놀기"}
+                  </span>
+                  <b>{g.name}</b>
+                  <i />
+                </div>
+              ))}
+              {VILLAGES.map((v, friendIndex) => (
+                <button
+                  key={v.id}
+                  className="adv-friend adv-npc"
+                  style={{ left: v.x, top: v.y }}
+                  onClick={() =>
+                    setMessage(
+                      `${v.friend}: ${Math.hypot(v.x - pos.x, v.y - pos.y) < 105 ? v.words : "가까이 와서 이야기하자! 왼쪽 조이스틱을 밀어 봐."}`,
+                    )
+                  }
+                  aria-label={`${v.friend} · 이야기`}
+                >
+                  <FriendArt index={friendIndex} />
+                  <b>{v.friend}</b>
+                  <small>{v.name}</small>
+                </button>
+              ))}
+              <div
+                className={`adv-gate ${nearDrawing ? "near" : ""}`}
+                style={{ left: 5010, top: 520 }}
+              >
+                <span>손가락 · 펜 놀이</span>
+                <b>별자리 공방</b>
+                <i />
+              </div>
+              <div className="adv-dog" style={{ left: 1420, top: 1030 }}>
+                <span>🐶</span>
+                <b>보리</b>
+              </div>
+              <div
+                className={`adv-player ${walking ? "walking" : ""}`}
+                style={{ left: pos.x, top: pos.y }}
+              >
+                <div style={{ transform: `scaleX(${facing})` }}>
+                  {diving ? (
+                    <span className="hj-diver">🤿</span>
+                  ) : driving ? (
+                    <CarArt car={carById(carId)} size={98} />
+                  ) : (
+                    <Mascot outfit={state.outfit} small />
                   )}
-                  {nearTarget && (
-                    <button onClick={helpCall}>
-                      {call.kind === "fire"
-                        ? "💦 물 뿌리기"
-                        : call.kind === "police"
-                          ? "🚓 도둑 잡기"
-                          : "🚑 사람 돕기"}
-                    </button>
-                  )}
-                </>
-              )}
+                </div>
+                <b>{driving ? "현준 🚗" : "현준"}</b>
+              </div>
             </>
-          )}
-          {callPhase === "resolved" && <strong>✅ 사건 해결! 새로운 신고를 받아 볼까?</strong>}
-          {!driving && isNearLake(pos) && (
-            <button
-              onClick={() => {
-                const p = enterLake(pos);
-                setPos(p);
-                returnPosition = p;
-                setDiving(true);
-              }}
-            >
-              🤿 호수 잠수
-            </button>
-          )}
-          {diving && (
-            <button
-              onClick={() => {
-                const p = leaveLake(pos);
-                setPos(p);
-                returnPosition = p;
-                setDiving(false);
-              }}
-            >
-              호숫가로 나오기
-            </button>
-          )}
-          {!driving && isNearCamp(pos) && (
-            <button
-              onClick={() => {
-                setCamping((v) => !v);
-                setMessage("숲속 캠핑을 즐겨 보자!");
-              }}
-            >
-              {camping ? "⛺ 캠핑 정리" : "⛺ 텐트 치기"}
-            </button>
+          ) : (
+            <LifeWorldScene
+              region={region}
+              player={lifePos}
+              following={robotFollowing}
+              holding={holding}
+              submarine={submarine}
+              explored={state.visitedSeaTreasures}
+            />
           )}
         </div>
+        {region === "village" && (
+          <div className="hj-live-board" role="status">
+            <button onClick={reportCall}>
+              ☎️{" "}
+              {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}
+            </button>
+            {call && callPhase !== "resolved" && (
+              <>
+                <strong>{call.report}</strong>
+                {callPhase === "reported" && (
+                  <button onClick={dispatchCall}>🚨 {STATIONS[call.kind].label}에서 출동</button>
+                )}
+                {callPhase === "dispatched" && (
+                  <>
+                    <small>
+                      목적지까지 {Math.round(target ? distance(pos, target) : 0)}m ·{" "}
+                      {target ? routeDirection(pos, target) : ""}
+                    </small>
+                    <button
+                      onClick={() => {
+                        setSiren((v) => !v);
+                        if (!siren) playGameSiren();
+                        setMessage("사이렌을 " + (siren ? "껐어." : "켰어!"));
+                      }}
+                    >
+                      {siren ? "🔕 사이렌 끄기" : "🚨 사이렌 켜기"}
+                    </button>
+                    {call.kind === "police" && (
+                      <button onClick={() => setThiefStep((p) => p + 1)}>🏃 도둑 추적</button>
+                    )}
+                    {nearTarget && (
+                      <button onClick={helpCall}>
+                        {call.kind === "fire"
+                          ? "💦 물 뿌리기"
+                          : call.kind === "police"
+                            ? "🚓 도둑 잡기"
+                            : "🚑 사람 돕기"}
+                      </button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            {callPhase === "resolved" && <strong>✅ 사건 해결! 새로운 신고를 받아 볼까?</strong>}
+            {!driving && isNearLake(pos) && (
+              <button
+                onClick={() => {
+                  const p = enterLake(pos);
+                  setPos(p);
+                  returnPosition = p;
+                  setDiving(true);
+                }}
+              >
+                🤿 호수 잠수
+              </button>
+            )}
+            {diving && (
+              <button
+                onClick={() => {
+                  const p = leaveLake(pos);
+                  setPos(p);
+                  returnPosition = p;
+                  setDiving(false);
+                }}
+              >
+                호숫가로 나오기
+              </button>
+            )}
+            {!driving && isNearCamp(pos) && (
+              <button
+                onClick={() => {
+                  setCamping((v) => !v);
+                  setMessage("숲속 캠핑을 즐겨 보자!");
+                }}
+              >
+                {camping ? "⛺ 캠핑 정리" : "⛺ 텐트 치기"}
+              </button>
+            )}
+          </div>
+        )}
+        {region !== "village" && (
+          <div className="hj-life-hud">
+            <b>{LIFE_REGION_LABELS[region]}</b>
+            <small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small>
+            <span>💰 {state.money} 별코인</span>
+            {holding && (
+              <span>손에 든 음식: {FOOD_MENU.find((food) => food.id === holding)?.name}</span>
+            )}
+          </div>
+        )}
         <div className="adv-location">
-          {nearDrawing ? "별자리 공방" : (district?.name ?? "우리 마을")}
+          {region !== "village"
+            ? LIFE_REGION_LABELS[region]
+            : nearDrawing
+              ? "별자리 공방"
+              : (district?.name ?? "우리 마을")}
         </div>
-        {mapOpen && (
+        {mapOpen && region === "village" && (
           <div className="adv-globe" role="dialog" aria-label="둥근 세계 지도">
             <header>
               <b>우리 세계 한 바퀴</b>
@@ -722,47 +941,62 @@ export function Village() {
             </button>
           </div>
         )}
-        {!mini && !drawing && !mapOpen && !garageOpen && (
+        {!mini && !drawing && !mapOpen && !garageOpen && !truckOpen && (
           <div className="adv-bottom adv-console">
             <p className="adv-touch-hint">{message}</p>
             <Joystick onMove={movement.setStick} />
-            <button
-              className="hj-car-mode"
-              onClick={() => {
-                if (driving) {
-                  setDriving(false);
-                  setSiren(false);
-                } else setGarageOpen(true);
-              }}
-            >
-              {driving ? "차에서 내리기" : "자동차 타기"}
-            </button>
+            {region === "village" && (
+              <button
+                className="hj-car-mode"
+                onClick={() => {
+                  if (driving) {
+                    setDriving(false);
+                    setSiren(false);
+                  } else setGarageOpen(true);
+                }}
+              >
+                {driving ? "차에서 내리기" : "자동차 타기"}
+              </button>
+            )}
             <div className="adv-action-buttons">
-              <button className="adv-map-button" onClick={() => setMapOpen(true)}>
-                지도
+              <button
+                className="adv-map-button"
+                onClick={() =>
+                  region === "village"
+                    ? setMapOpen(true)
+                    : region === "coast"
+                      ? travelTo("mansion", LIFE_SPOTS.mansionInside)
+                      : travelTo("coast", LIFE_SPOTS.coastArrival)
+                }
+              >
+                {region === "village" ? "지도" : region === "coast" ? "큰 집" : "해변"}
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
-                {diving
-                  ? "물 밖으로 나오기"
-                  : call && callPhase === "dispatched" && nearTarget
-                    ? call.kind === "fire"
-                      ? "물 뿌리기"
-                      : call.kind === "police"
-                        ? "도둑 잡기"
-                        : "사람 돕기"
-                    : isNearCamp(pos) && !driving
-                      ? "캠핑하기"
-                      : isNearLake(pos) && !driving
-                        ? "잠수하기"
-                        : nearDrawing
-                          ? "별자리 그리기"
-                          : friend
-                            ? `${friend.friend} · 이야기`
-                            : nearby
-                              ? `${nearby.name} · 시작`
-                              : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
-                                ? "보리 돌보기"
-                                : "놀이 · 대화"}
+                {region !== "village"
+                  ? lifeActionLabel()
+                  : !driving && nearSpot(pos, LIFE_SPOTS.villageGate, 205)
+                    ? "큰 바다 여행"
+                    : diving
+                      ? "물 밖으로 나오기"
+                      : call && callPhase === "dispatched" && nearTarget
+                        ? call.kind === "fire"
+                          ? "물 뿌리기"
+                          : call.kind === "police"
+                            ? "도둑 잡기"
+                            : "사람 돕기"
+                        : isNearCamp(pos) && !driving
+                          ? "캠핑하기"
+                          : isNearLake(pos) && !driving
+                            ? "잠수하기"
+                            : nearDrawing
+                              ? "별자리 그리기"
+                              : friend
+                                ? `${friend.friend} · 이야기`
+                                : nearby
+                                  ? `${nearby.name} · 시작`
+                                  : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
+                                    ? "보리 돌보기"
+                                    : "놀이 · 대화"}
               </button>
             </div>
           </div>
@@ -772,6 +1006,52 @@ export function Village() {
         <p role="status">{message}</p>
         <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
+      {truckOpen && (
+        <div className="hj-food-backdrop">
+          <section
+            className="hj-food-shop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="푸드트럭 메뉴"
+          >
+            <header>
+              <h2>🍕 현준이 푸드트럭</h2>
+              <button onClick={() => setTruckOpen(false)}>닫기 ✕</button>
+            </header>
+            <p>
+              손님 주문: <strong>{FOOD_MENU.find((f) => f.id === order.foodId)?.name}</strong> ·
+              음식을 고르고 손님에게 가져다줘!
+            </p>
+            <div className="hj-food-menu">
+              {FOOD_MENU.map((food) => (
+                <button
+                  key={food.id}
+                  aria-pressed={holding === food.id}
+                  onClick={() => {
+                    setHolding(food.id);
+                    if (food.id === order.foodId) {
+                      setOrder((prev) => ({ ...prev, phase: "prepared" }));
+                      setMessage("주문한 음식을 손에 들었어. 손님에게 전달하자!");
+                    } else {
+                      setMessage("손님이 원하는 메뉴를 골라야 해!");
+                    }
+                  }}
+                >
+                  <span style={{ fontSize: 20 * food.size }}>{food.emoji}</span>
+                  <b>{food.name}</b>
+                  <small>{food.price} 별코인</small>
+                </button>
+              ))}
+            </div>
+            <p>
+              {order.phase === "prepared"
+                ? "✅ 주문 음식 준비 완료! 손님에게 가서 전달하자."
+                : "주문에 맞는 메뉴를 골라 줘."}
+            </p>
+            <button onClick={() => setTruckOpen(false)}>트럭에서 나와 손님 만나기</button>
+          </section>
+        </div>
+      )}
       {garageOpen && (
         <Garage
           selected={carId}

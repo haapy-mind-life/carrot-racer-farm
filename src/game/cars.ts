@@ -9,6 +9,8 @@ export const CAR_KINDS = [
   { name: "캠핑카", shape: "camper", roof: "캠핑 지붕" },
   { name: "택시", shape: "taxi", roof: "택시 표시" },
   { name: "우주자동차", shape: "space", roof: "로켓 장치" },
+  { name: "푸드트럭", shape: "foodtruck", roof: "먹거리 가게" },
+  { name: "리무진", shape: "limo", roof: "길고 넓은 객실" },
 ] as const;
 const COLOR_NAMES = [
   "딸기",

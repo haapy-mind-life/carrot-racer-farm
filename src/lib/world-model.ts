@@ -90,6 +90,8 @@ export type GameState = {
   settledRuns: string[];
   miniBest: Record<"treasure" | "stars" | "fishing" | "constellation", number>;
   settledMinis: string[];
+  settledFoodSales: string[];
+  visitedSeaTreasures: string[];
 };
 export const PLOT_COUNT = 6;
 export const TICKET_PRICE = 50000;
@@ -136,6 +138,16 @@ export function migrateSave(input: unknown): GameState {
       ? raw["settledMinis"]
           .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 160)
           .slice(-50)
+      : [],
+    settledFoodSales: Array.isArray(raw["settledFoodSales"])
+      ? raw["settledFoodSales"]
+          .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 120)
+          .slice(-80)
+      : [],
+    visitedSeaTreasures: Array.isArray(raw["visitedSeaTreasures"])
+      ? raw["visitedSeaTreasures"]
+          .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 120)
+          .slice(-30)
       : [],
     version: 2,
     money: finite(raw["money"], 50),
@@ -191,8 +203,48 @@ export type WorldAction =
   | { type: "outfit"; outfit: Outfit }
   | { type: "wallpaper"; wallpaper: Wallpaper }
   | { type: "friend-play"; id: FriendId }
-  | { type: "feed-animal"; id: AnimalId };
+  | { type: "feed-animal"; id: AnimalId }
+  | { type: "sell-food"; id: string; foodId: string }
+  | { type: "explore-sea"; id: string };
 export function reduceWorld(state: GameState, action: WorldAction): GameState {
+  if (action.type === "sell-food") {
+    const menu: Record<string, number> = {
+      cutlet: 18,
+      kimchi: 12,
+      pizza: 25,
+      cola: 8,
+      "giant-pizza": 55,
+      "gold-pizza": 150,
+      "dino-burger": 60,
+      "giant-icecream": 45,
+    };
+    if (
+      !action.id ||
+      action.id.length >= 120 ||
+      state.settledFoodSales.includes(action.id) ||
+      !Object.hasOwn(menu, action.foodId)
+    )
+      return state;
+    return {
+      ...state,
+      money: Math.min(1e12, state.money + menu[action.foodId]!),
+      settledFoodSales: [...state.settledFoodSales, action.id].slice(-80),
+    };
+  }
+  if (action.type === "explore-sea") {
+    const rewards: Record<string, number> = {
+      "pearl-coral": 20,
+      "star-fish": 25,
+      "gold-shell": 35,
+    };
+    if (!Object.hasOwn(rewards, action.id) || state.visitedSeaTreasures.includes(action.id))
+      return state;
+    return {
+      ...state,
+      money: Math.min(1e12, state.money + rewards[action.id]!),
+      visitedSeaTreasures: [...state.visitedSeaTreasures, action.id].slice(-30),
+    };
+  }
   if (action.type === "settle-mini") {
     const limits = { treasure: 6, stars: 18, fishing: 5, constellation: 6 };
     if (
