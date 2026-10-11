@@ -300,6 +300,8 @@ export function Village() {
     if (!call || !emergencyVehicle) return;
     const start = STATIONS[call.kind];
     setDriving(true);
+    setSubmarine(false);
+    setSubmerged(false);
     setDiving(false);
     setCamping(false);
     setPos({ x: start.x, y: start.y });
@@ -455,7 +457,7 @@ export function Village() {
             : diving
               ? diveStep(p, d, dt)
               : stepPlayer(p, d, dt * (driving ? 1.48 : 1));
-          returnPosition = next;
+          returnPosition = submarine ? { x: COAST.harbor.x-150, y: COAST.harbor.y+40 } : next;
           return next;
         });
       last = now;
@@ -489,7 +491,7 @@ export function Village() {
         >
           🌊 {region === "village" ? "해변 안내" : "집 밖으로"}
         </button>
-        <button onClick={() => setGarageOpen(true)}>🚗 자동차 120대</button>
+        <button onClick={() => setGarageOpen(true)} disabled={submarine}>🚗 자동차 120대</button>
         {region === "village" && (
           <span>🏠 우리 집 Lv.{state.houseTier}/4 · 🌊 해안과 바다도 하나의 월드</span>
         )}
