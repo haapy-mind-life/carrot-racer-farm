@@ -67,11 +67,8 @@ const router = createRouter({
   defaultPreloadStaleTime: 0,
 });
 
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
-  }
-}
+// Keep the static-only router local. A global Register override would change
+// src/routes/__root.tsx route-context inference in the existing SSR app.
 
 const app = document.getElementById("root");
 if (!app) throw new Error("Game root element not found");
