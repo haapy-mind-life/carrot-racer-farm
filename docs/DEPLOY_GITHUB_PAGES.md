@@ -7,7 +7,7 @@
 - 원본 게임: `src/components/hyunjun/`의 마을/러너/농장/집/미니게임 컴포넌트를 그대로 사용.
 - Lovable/TanStack Start 개발용 빌드는 `npm run build`로 그대로 유지.
 - 독립 정적 빌드: `npm run build:pages`. `vite.pages.config.ts`는 Lovable 서버 설정을 사용하지 않음.
-- 주소: `https://haapy-mind-life.github.io/carrot-racer-farm/` (실제 배포 성공 전까지 **예정 주소**).
+- 주소: `https://haapy-mind-life.github.io/phj-game/` (실제 배포 성공 전까지 **예정 주소**).
 - 페이지 내 이동: `#/race`, `#/greenhouse`, `#/house` 해시 라우팅으로 새로고침과 정적 호스팅 경로 충돌을 회피.
 - 로컬 저장: 기존 `hyunjun-game-v2` 키 및 이전 저장 마이그레이션 규칙은 동일한 게임 코드에서 유지.
 
