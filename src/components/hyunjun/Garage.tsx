@@ -20,14 +20,14 @@ export function Garage({
   onClose: () => void;
 }) {
   const [page, setPage] = useState(0);
-  const pages = 5;
+  const pages = Math.ceil(CARS.length / 20);
   return (
     <div className="hj-garage-backdrop" role="presentation">
-      <section className="hj-garage" role="dialog" aria-modal="true" aria-label="자동차 100종 차고">
+      <section className="hj-garage" role="dialog" aria-modal="true" aria-label="자동차 120종 차고">
         <header>
           <div>
             <h2>현준이의 자동차 차고</h2>
-            <p>100대 중 마음에 드는 차를 골라 운전해 보자!</p>
+            <p>{CARS.length}대 중 마음에 드는 차를 골라 운전해 보자!</p>
           </div>
           <button onClick={onClose}>닫기 ✕</button>
         </header>
@@ -44,7 +44,7 @@ export function Garage({
             >
               <CarArt car={car} size={85} />
               <span>{car.name}</span>
-              <small>{car.number} / 100</small>
+              <small>{car.number} / {CARS.length}</small>
             </button>
           ))}
         </div>
