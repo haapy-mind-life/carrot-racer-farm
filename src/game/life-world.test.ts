@@ -1,13 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  FOOD_MENU, LIFE_MAPS, LIFE_SPOTS, SEA_TREASURES, foodById, nextFoodOrder,
-  nearSpot, nearbyTreasure, stepLifePlayer,
+  FOOD_MENU,
+  LIFE_MAPS,
+  LIFE_SPOTS,
+  SEA_TREASURES,
+  foodById,
+  nextFoodOrder,
+  nearSpot,
+  nearbyTreasure,
+  stepLifePlayer,
 } from "./life-world.ts";
 
 test("all requested foods and visually giant pizza variants exist", () => {
   for (const name of ["돈까스", "김치", "피자", "콜라", "대왕 피자", "초대형 황금 피자"])
-    assert.ok(FOOD_MENU.some((food) => food.name === name), name);
+    assert.ok(
+      FOOD_MENU.some((food) => food.name === name),
+      name,
+    );
   assert.equal(new Set(FOOD_MENU.map((food) => food.id)).size, FOOD_MENU.length);
   assert.ok(foodById("giant-pizza")!.size > foodById("pizza")!.size);
   assert.ok(foodById("gold-pizza")!.size > foodById("giant-pizza")!.size);
