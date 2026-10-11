@@ -1100,3 +1100,19 @@
     font-size: 64px;
   }
 }
+
+/* Airplane */
+.hj-plane-player {
+  filter: drop-shadow(0 6px 4px #0a2f4a55);
+  transition: transform 0.12s linear;
+}
+.hj-plane-shadow {
+  position: absolute;
+  left: 50%;
+  top: 36px;
+  width: 150px;
+  height: 34px;
+  border-radius: 50%;
+  background: #0a2f4a;
+  pointer-events: none;
+}

@@ -1,4 +1,4 @@
-import type { Point } from "./adventure.ts";
+import { isWalkable, MAP, type Point } from "./adventure.ts";
 export const COAST = {
   truck: { x: 6310, y: 920 },
   customer: { x: 6640, y: 1120 },
@@ -31,3 +31,24 @@ export const OCEAN_DISCOVERIES = [
   { id: "star-fish", name: "불가사리", x: 8760, y: 1220 },
   { id: "gold-shell", name: "황금 조개", x: 9600, y: 660 },
 ] as const;
+
+// Airplane: a runway on the coast. Takes off from the runway, flies across the whole 10200px map,
+// and may only land on land or the runway, never on open water.
+export const SHORE_X = OCEAN.start - 40;
+export const RUNWAY = { x1: 5780, x2: 6980, y: 1500, half: 60 };
+export const AIRPORT = { x: 6380, y: RUNWAY.y };
+export const PLANE_SPEED = 520;
+export function onRunway(p: Point) {
+  return p.x >= RUNWAY.x1 && p.x <= RUNWAY.x2 && Math.abs(p.y - RUNWAY.y) <= RUNWAY.half;
+}
+export function canLandPlane(p: Point) {
+  return onRunway(p) || (p.x < SHORE_X && isWalkable(p));
+}
+export function stepPlane(p: Point, d: Point, dt: number): Point {
+  const t = Math.min(0.05, Math.max(0, dt)),
+    len = Math.max(1, Math.hypot(d.x, d.y));
+  return {
+    x: Math.max(40, Math.min(MAP.width - 40, p.x + (d.x * PLANE_SPEED * t) / len)),
+    y: Math.max(40, Math.min(MAP.height - 40, p.y + (d.y * PLANE_SPEED * t) / len)),
+  };
+}

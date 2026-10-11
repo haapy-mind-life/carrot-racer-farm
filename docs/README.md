@@ -31,3 +31,5 @@
 ## 최신 수정: 분리된 바다를 하나의 확장 월드로 바로잡음
 
 - [10_UNIFIED_WORLD_REBUILD.md](world-expansion/2026-10-11-v0.1.0/10_UNIFIED_WORLD_REBUILD.md): 사용자 지적에 따른 정정 구현. 이전 09 문서의 별도 해변/해저 및 해변 대왕집 완성 주장을 제품 수락 관점에서 폐기하고, 원래 마을과 연결된 바다·푸드트럭 및 원래 집의 돈으로 증축 시스템을 기준으로 한다.
+
+- [11_WORLD_POLISH_AND_AIRPLANE.md](world-expansion/2026-10-11-v0.1.0/11_WORLD_POLISH_AND_AIRPLANE.md): '새 월드가 어색함' 점검(스크린샷 근거), 해안·바다 정리, 비행기 추가. 실기기 UAT NOT RUN.

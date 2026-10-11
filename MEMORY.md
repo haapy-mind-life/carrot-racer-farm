@@ -91,3 +91,10 @@
 - **기존 우리 집 x≈480**을 `houseTier=1..4`로 별코인 증축; 기존 v2 세이브와 가구 꾸미기 유지.
 - 본 건의 상세 변경·수락 기준·미확인 실기기 검증: `docs/world-expansion/2026-10-11-v0.1.0/10_UNIFIED_WORLD_REBUILD.md`.
 - **실제 삼성 브라우저/S Pen·현준이 플레이·FPS UAT는 NOT RUN**. 이전 별도 해변/해저 화면을 최신 제품 구조로 다시 설명하지 말 것.
+
+## 후속 점검: 월드 어색함 + 비행기 (브랜치 `fix/world-polish-airplane-20261011`, 미푸시)
+
+- 사용자가 PR #17 이후에도 새 월드가 어색하다고 피드백. 이번엔 헤드리스 스크린샷(키보드 보행)을 수락 근거로 사용: `docs/.../11_WORLD_POLISH_AND_AIRPLANE.md`.
+- 해안선/모래/파도, 지역명, 스폰 겹침, 로봇 크기 정리. **비행기 추가**(활주로 x5780..6980,y1500; 땅/활주로만 착륙). HWQ-03 '비상도'는 비행기일 수 있으나 미확정.
+- 남은 문제: 수중 119 팝업, 지도 모달 문구/내용, `life-world.ts` 잔재, 항구 아트. 실기기 UAT NOT RUN.
+- 검증 방법: `bun run build:pages` → `bun run preview:pages` → playwright-core + `~/.cache/ms-playwright/chromium_headless_shell-1234`.

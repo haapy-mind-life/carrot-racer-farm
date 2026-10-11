@@ -1,12 +1,19 @@
-import { COAST, HOUSE_TIERS, OCEAN, OCEAN_DISCOVERIES } from "@/game/unified-world";
+import {
+  AIRPORT,
+  COAST,
+  HOUSE_TIERS,
+  OCEAN,
+  OCEAN_DISCOVERIES,
+  RUNWAY,
+} from "@/game/unified-world";
 export function UnifiedCoast({
-  houseTier,
+  parkedPlane,
   submarine,
   submerged,
   discovered,
   robotFollowing,
 }: {
-  houseTier: number;
+  parkedPlane: boolean;
   submarine: boolean;
   submerged: boolean;
   discovered: string[];
@@ -22,24 +29,43 @@ export function UnifiedCoast({
     >
       <defs>
         <linearGradient id="unified-sea" x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#90e7ed" />
-          <stop offset=".6" stopColor="#2996c7" />
-          <stop offset="1" stopColor="#135780" />
+          <stop stopColor="#8fe3ec" />
+          <stop offset=".55" stopColor="#2996c7" />
+          <stop offset="1" stopColor="#0f4a76" />
+        </linearGradient>
+        <linearGradient
+          id="coast-land"
+          gradientUnits="userSpaceOnUse"
+          x1="5600"
+          y1="0"
+          x2="7330"
+          y2="0"
+        >
+          <stop stopColor="#d7e7b9" />
+          <stop offset=".45" stopColor="#e9e6b6" />
+          <stop offset=".8" stopColor="#f6e3a6" />
+          <stop offset="1" stopColor="#f2d78f" />
+        </linearGradient>
+        <linearGradient
+          id="shallow-water"
+          gradientUnits="userSpaceOnUse"
+          x1="7370"
+          y1="0"
+          x2="7700"
+          y2="0"
+        >
+          <stop stopColor="#c8f6ef" />
+          <stop offset="1" stopColor="#c8f6ef" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <rect x="5600" width="1780" height="1800" fill="#d6ecc3" />
+      <rect x="5600" width="1780" height="1800" fill="url(#coast-land)" />
       <path
-        d="M5600 870H7300M6200 870V1500M6750 870V450M7180 870V1500"
+        d="M5600 850H6960M6200 850V1500M6750 850V450"
         fill="none"
-        stroke="#f4dfb8"
-        strokeWidth="120"
+        stroke="#f5e7ca"
+        strokeWidth="100"
       />
-      <path
-        d="M7290 0Q7370 250 7280 480T7280 960T7300 1450T7280 1800"
-        stroke="#f7e6aa"
-        strokeWidth="180"
-        fill="none"
-      />
+      <path d="M7230 0Q7310 250 7240 480T7250 960T7270 1450T7260 1800H7390V0Z" fill="#f4dc9a" />
       <rect
         x={OCEAN.start}
         y="0"
@@ -47,6 +73,29 @@ export function UnifiedCoast({
         height="1800"
         fill="url(#unified-sea)"
       />
+      <rect x={OCEAN.start} y="0" width="330" height="1800" fill="url(#shallow-water)" />
+      <path
+        d="M7384 0Q7350 250 7390 480T7384 960T7396 1450T7384 1800"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="14"
+        strokeLinecap="round"
+        strokeDasharray="70 36"
+        opacity=".85"
+      />
+      <path
+        d="M7440 0Q7410 250 7450 480T7444 960T7456 1450T7444 1800"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="7"
+        strokeDasharray="40 60"
+        opacity=".55"
+      />
+      {[160, 330, 520, 700, 1180, 1330, 1560, 1700].map((y, i) => (
+        <text key={y} x={6900 + (i % 3) * 120 + (i % 2) * 40} y={y} fontSize="120">
+          {i % 3 === 0 ? "🌴" : i % 3 === 1 ? "⛱️" : "🐚"}
+        </text>
+      ))}
       {submerged && (
         <rect
           x={OCEAN.start}
@@ -100,7 +149,7 @@ export function UnifiedCoast({
         손님
       </text>
       {!robotFollowing && (
-        <g transform={`translate(${COAST.robot.x} ${COAST.robot.y})`}>
+        <g transform={`translate(${COAST.robot.x} ${COAST.robot.y}) scale(.62)`}>
           <rect
             x="-48"
             y="-92"
@@ -128,6 +177,49 @@ export function UnifiedCoast({
           </text>
         </g>
       )}
+      <rect
+        x="7240"
+        y={COAST.harbor.y + 20}
+        width="330"
+        height="46"
+        rx="8"
+        fill="#a97f5b"
+        stroke="#7b5a40"
+        strokeWidth="6"
+      />
+      <g>
+        <rect
+          x={RUNWAY.x1}
+          y={RUNWAY.y - RUNWAY.half}
+          width={RUNWAY.x2 - RUNWAY.x1}
+          height={RUNWAY.half * 2}
+          rx="14"
+          fill="#6b6f7a"
+          stroke="#f3f0e2"
+          strokeWidth="8"
+        />
+        <path
+          d={`M${RUNWAY.x1 + 40} ${RUNWAY.y}H${RUNWAY.x2 - 40}`}
+          stroke="#fff"
+          strokeWidth="8"
+          strokeDasharray="60 44"
+        />
+        <text
+          x={(RUNWAY.x1 + RUNWAY.x2) / 2}
+          y={RUNWAY.y - 86}
+          fontSize="38"
+          textAnchor="middle"
+          fill="#4f6670"
+          fontWeight="bold"
+        >
+          ✈️ 현준이 비행장
+        </text>
+        {parkedPlane && (
+          <g transform={`translate(${AIRPORT.x} ${AIRPORT.y})`}>
+            <PlaneArt />
+          </g>
+        )}
+      </g>
       <g transform={`translate(${COAST.harbor.x} ${COAST.harbor.y})`}>
         <rect x="-150" y="-24" width="310" height="58" rx="17" fill="#ac8164" />
         <ellipse
@@ -196,7 +288,11 @@ export function UnifiedCoast({
         </g>
       ))}
       {Array.from({ length: 26 }, (_, i) => (
-        <g key={i} transform={`translate(${7500 + i * 94} ${1520 - (i % 4) * 56})`}>
+        <g
+          key={i}
+          opacity={submerged ? 1 : 0.4}
+          transform={`translate(${7500 + i * 94} ${1520 - (i % 4) * 56}) scale(.6)`}
+        >
           <path
             d="M0 88q-65-115-22-165M0 88q62-90 25-150M0 88V-66"
             fill="none"
@@ -212,17 +308,8 @@ export function UnifiedCoast({
       <text x="8300" y="470" fontSize="43" fill="#edffff">
         바닷속 탐험 구역
       </text>
-      <text x="5840" y="460" fontSize="45" fill="#506e59">
-        해안 마을 · 이어진 하나의 월드
-      </text>
-      <text x="5610" y="1010" fontSize="29" fill="#688569">
-        ← 기존 10개 마을
-      </text>
-      <text x="6370" y="1670" fontSize="34" fill="#5e7767">
-        🏡 우리 집은 서쪽 마을에 있어요. 별코인으로 증축!
-      </text>
-      <text x="6080" y="340" fontSize="29" fill="#5d795d">
-        우리 집 확장 Lv.{houseTier}/4
+      <text x="5900" y="420" fontSize="44" fill="#6b7f4f" fontWeight="bold">
+        🏖️ 바닷가 마을
       </text>
       {submarine && (
         <text x="8060" y="150" fontSize="40" fill="white">
@@ -314,5 +401,18 @@ export function GrowingHome({ tier }: { tier: number }) {
         </>
       )}
     </svg>
+  );
+}
+
+export function PlaneArt() {
+  return (
+    <g>
+      <ellipse cx="0" cy="8" rx="120" ry="30" fill="#ff7b6b" stroke="#fff4e0" strokeWidth="7" />
+      <path d="M-30 -2L-70 -70H-35L18 -2Z" fill="#ffd36e" stroke="#fff4e0" strokeWidth="5" />
+      <path d="M-30 14L-72 76H-37L18 14Z" fill="#ffd36e" stroke="#fff4e0" strokeWidth="5" />
+      <path d="M-108 4L-134 -42H-110L-84 -2Z" fill="#ffd36e" stroke="#fff4e0" strokeWidth="5" />
+      <ellipse cx="72" cy="2" rx="30" ry="16" fill="#aee9f2" stroke="#fff" strokeWidth="4" />
+      <circle cx="132" cy="8" r="8" fill="#555" />
+    </g>
   );
 }
