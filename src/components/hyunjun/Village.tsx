@@ -227,7 +227,7 @@ export function Village() {
       goHomeInside();
       return;
     }
-    if (nearLife(COAST.foodCustomer, 225) && order.phase === "prepared") {
+    if (nearLife(COAST.customer, 225) && order.phase === "prepared") {
       sellPreparedFood();
       return;
     }
@@ -264,7 +264,7 @@ export function Village() {
       return submerged ? "수면으로 상승" : "바닷속 잠수";
     }
     if (atOriginalHouse) return "우리 집 들어가기";
-    if (nearLife(COAST.foodCustomer, 225) && order.phase === "prepared") return "음식 전달";
+    if (nearLife(COAST.customer, 225) && order.phase === "prepared") return "음식 전달";
     if (nearLife(COAST.truck, 275)) return "푸드트럭 영업";
     if (nearLife(COAST.harbor, 290)) return "잠수함 타기";
     if (nearLife(COAST.robot, 240)) return "아빠 로봇 동행";
