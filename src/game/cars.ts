@@ -10,8 +10,30 @@ export const CAR_KINDS = [
   { name: "택시", shape: "taxi", roof: "택시 표시" },
   { name: "우주자동차", shape: "space", roof: "로켓 장치" },
 ] as const;
-const COLOR_NAMES = ["딸기", "하늘", "레몬", "민트", "보라", "주황", "벚꽃", "바다", "초록", "별빛"] as const;
-const COLORS = ["#f46f7b", "#63b6ef", "#f2c94c", "#70cba7", "#9e8de5", "#f4985a", "#e99fce", "#448dba", "#78ab61", "#c6a578"] as const;
+const COLOR_NAMES = [
+  "딸기",
+  "하늘",
+  "레몬",
+  "민트",
+  "보라",
+  "주황",
+  "벚꽃",
+  "바다",
+  "초록",
+  "별빛",
+] as const;
+const COLORS = [
+  "#f46f7b",
+  "#63b6ef",
+  "#f2c94c",
+  "#70cba7",
+  "#9e8de5",
+  "#f4985a",
+  "#e99fce",
+  "#448dba",
+  "#78ab61",
+  "#c6a578",
+] as const;
 export const CARS = CAR_KINDS.flatMap((kind, kindIndex) =>
   COLOR_NAMES.map((colorName, colorIndex) => ({
     id: `car-${String(kindIndex * 10 + colorIndex + 1).padStart(3, "0")}`,

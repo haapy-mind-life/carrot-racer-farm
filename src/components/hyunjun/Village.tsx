@@ -426,7 +426,11 @@ export function Village() {
             style={{ left: pos.x, top: pos.y }}
           >
             <div style={{ transform: `scaleX(${facing})` }}>
-              {driving ? <CarArt car={carById(carId)} size={98} /> : <Mascot outfit={state.outfit} small />}
+              {driving ? (
+                <CarArt car={carById(carId)} size={98} />
+              ) : (
+                <Mascot outfit={state.outfit} small />
+              )}
             </div>
             <b>{driving ? "현준 🚗" : "현준"}</b>
           </div>
@@ -505,7 +509,15 @@ export function Village() {
           <div className="adv-bottom adv-console">
             <p className="adv-touch-hint">{message}</p>
             <Joystick onMove={movement.setStick} />
-            <button className="hj-car-mode" onClick={() => { if (driving) setDriving(false); else setGarageOpen(true); }}>{driving ? "차에서 내리기" : "자동차 타기"}</button>
+            <button
+              className="hj-car-mode"
+              onClick={() => {
+                if (driving) setDriving(false);
+                else setGarageOpen(true);
+              }}
+            >
+              {driving ? "차에서 내리기" : "자동차 타기"}
+            </button>
             <div className="adv-action-buttons">
               <button className="adv-map-button" onClick={() => setMapOpen(true)}>
                 지도
@@ -529,7 +541,17 @@ export function Village() {
         <p role="status">{message}</p>
         <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
-      {garageOpen && <Garage selected={carId} onSelect={id => { setCarId(id); saveCarId(id); setDriving(true); }} onClose={() => setGarageOpen(false)} />}
+      {garageOpen && (
+        <Garage
+          selected={carId}
+          onSelect={(id) => {
+            setCarId(id);
+            saveCarId(id);
+            setDriving(true);
+          }}
+          onClose={() => setGarageOpen(false)}
+        />
+      )}
       {drawing && (
         <Constellation
           onClose={() => {
