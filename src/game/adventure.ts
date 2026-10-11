@@ -1,6 +1,8 @@
 export type Point = { x: number; y: number };
 export type MiniKind = "treasure" | "stars" | "fishing";
-export const MAP = { width: 5600, height: 1800 };
+// Preserve the original 0..5600 villages. The coast and ocean are contiguous eastern ground.
+export const MAP = { width: 10200, height: 1800 };
+export const OCEAN_START = 7380;
 export const SPAWN = { x: 1350, y: 920 };
 export const BLOCKS = [
   { id: "house", x: 360, y: 330, w: 240, h: 180 },
@@ -26,7 +28,8 @@ export function stepPlayer(p: Point, d: Point, dt: number): Point {
   const length = Math.hypot(d.x, d.y) || 1;
   const step = (245 * clamp(dt, 0, 0.05)) / Math.max(1, length);
   const next = { x: p.x, y: p.y };
-  const x = (((p.x + d.x * step) % MAP.width) + MAP.width) % MAP.width;
+  // The old 5600px world used to wrap; a finite eastern ocean now requires real boundaries.
+  const x = clamp(p.x + d.x * step, 24, OCEAN_START - 52);
   if (isWalkable({ x, y: p.y })) next.x = x;
   const y = clamp(p.y + d.y * step, 24, MAP.height - 24);
   if (isWalkable({ x: next.x, y })) next.y = y;
