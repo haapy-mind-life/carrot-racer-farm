@@ -786,14 +786,61 @@ export function Village() {
               >
                 <div style={{ transform: `scaleX(${facing})` }}>
                   {submarine ? (
-                    <svg className="hj-submarine-player" width="176" height="110" viewBox="0 0 176 110" role="img" aria-label="노란 잠수함">
-                      <ellipse cx="83" cy="76" rx="74" ry="29" fill="#ffc956" stroke="#f9f1cc" strokeWidth="7" />
-                      <path d="M71 51V19H124" fill="none" stroke="#ffd977" strokeWidth="17" strokeLinecap="round" />
+                    <svg
+                      className="hj-submarine-player"
+                      width="176"
+                      height="110"
+                      viewBox="0 0 176 110"
+                      role="img"
+                      aria-label="노란 잠수함"
+                    >
+                      <ellipse
+                        cx="83"
+                        cy="76"
+                        rx="74"
+                        ry="29"
+                        fill="#ffc956"
+                        stroke="#f9f1cc"
+                        strokeWidth="7"
+                      />
+                      <path
+                        d="M71 51V19H124"
+                        fill="none"
+                        stroke="#ffd977"
+                        strokeWidth="17"
+                        strokeLinecap="round"
+                      />
                       <rect x="74" y="18" width="32" height="33" rx="7" fill="#ffc956" />
-                      <circle cx="48" cy="72" r="17" fill="#a3e8ec" stroke="white" strokeWidth="4" />
-                      <circle cx="90" cy="72" r="17" fill="#a3e8ec" stroke="white" strokeWidth="4" />
-                      <circle cx="131" cy="72" r="17" fill="#a3e8ec" stroke="white" strokeWidth="4" />
-                      <path d="M14 66L2 44V95L14 83" fill="#ffdd72" stroke="#f8f0d0" strokeWidth="5" />
+                      <circle
+                        cx="48"
+                        cy="72"
+                        r="17"
+                        fill="#a3e8ec"
+                        stroke="white"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="90"
+                        cy="72"
+                        r="17"
+                        fill="#a3e8ec"
+                        stroke="white"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="131"
+                        cy="72"
+                        r="17"
+                        fill="#a3e8ec"
+                        stroke="white"
+                        strokeWidth="4"
+                      />
+                      <path
+                        d="M14 66L2 44V95L14 83"
+                        fill="#ffdd72"
+                        stroke="#f8f0d0"
+                        strokeWidth="5"
+                      />
                     </svg>
                   ) : diving ? (
                     <span className="hj-diver">🤿</span>
@@ -1036,26 +1083,26 @@ export function Village() {
                 {region === "mansion" || submarine || atOriginalHouse || pos.x > 5700
                   ? actionLifeLabel()
                   : diving
-                      ? "물 밖으로 나오기"
-                      : call && callPhase === "dispatched" && nearTarget
-                        ? call.kind === "fire"
-                          ? "물 뿌리기"
-                          : call.kind === "police"
-                            ? "도둑 잡기"
-                            : "사람 돕기"
-                        : isNearCamp(pos) && !driving
-                          ? "캠핑하기"
-                          : isNearLake(pos) && !driving
-                            ? "잠수하기"
-                            : nearDrawing
-                              ? "별자리 그리기"
-                              : friend
-                                ? `${friend.friend} · 이야기`
-                                : nearby
-                                  ? `${nearby.name} · 시작`
-                                  : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
-                                    ? "보리 돌보기"
-                                    : "놀이 · 대화"}
+                    ? "물 밖으로 나오기"
+                    : call && callPhase === "dispatched" && nearTarget
+                      ? call.kind === "fire"
+                        ? "물 뿌리기"
+                        : call.kind === "police"
+                          ? "도둑 잡기"
+                          : "사람 돕기"
+                      : isNearCamp(pos) && !driving
+                        ? "캠핑하기"
+                        : isNearLake(pos) && !driving
+                          ? "잠수하기"
+                          : nearDrawing
+                            ? "별자리 그리기"
+                            : friend
+                              ? `${friend.friend} · 이야기`
+                              : nearby
+                                ? `${nearby.name} · 시작`
+                                : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
+                                  ? "보리 돌보기"
+                                  : "놀이 · 대화"}
               </button>
             </div>
           </div>
