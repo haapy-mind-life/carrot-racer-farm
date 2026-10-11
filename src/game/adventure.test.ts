@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import { stepPlayer, cameraAt, BLOCKS, PORTALS, newMini, stepMini, actMini } from "./adventure.ts";
 import { migrateSave, reduceWorld } from "../lib/world-model.ts";
 
-test("diagonal movement has the same speed and world edges stop movement", () => {
+test("diagonal movement has the same speed and north edge stops movement", () => {
   const p = { x: 1100, y: 850 };
   const a = stepPlayer(p, { x: 1, y: 0 }, 1 / 60);
   const b = stepPlayer(p, { x: 1, y: 1 }, 1 / 60);
   assert.ok(Math.abs(Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y)) < 0.01);
-  assert.equal(stepPlayer({ x: 24, y: 24 }, { x: -1, y: -1 }, 1).x, 24);
+  assert.equal(stepPlayer({ x: 24, y: 24 }, { x: -1, y: -1 }, 1).y, 24);
 });
 test("lake and buildings block walking while all entrances are reachable ground", () => {
   for (const p of PORTALS) assert.deepEqual(stepPlayer(p, { x: 0, y: 0 }, 0), { x: p.x, y: p.y });
@@ -18,7 +18,7 @@ test("lake and buildings block walking while all entrances are reachable ground"
 });
 test("camera never exposes space outside the map", () => {
   assert.deepEqual(cameraAt({ x: 24, y: 24 }, 800, 500), { x: 0, y: 0 });
-  assert.deepEqual(cameraAt({ x: 2776, y: 1776 }, 800, 500), { x: 2000, y: 1300 });
+  assert.deepEqual(cameraAt({ x: 5576, y: 1776 }, 800, 500), { x: 4800, y: 1300 });
 });
 test("treasure can be won, rewards freeze, and restart clears progress", () => {
   const g = newMini("treasure");

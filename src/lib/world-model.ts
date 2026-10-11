@@ -88,7 +88,7 @@ export type GameState = {
   friendship: Record<FriendId, number>;
   animals: Record<AnimalId, AnimalState>;
   settledRuns: string[];
-  miniBest: Record<"treasure" | "stars" | "fishing", number>;
+  miniBest: Record<"treasure" | "stars" | "fishing" | "constellation", number>;
   settledMinis: string[];
 };
 export const PLOT_COUNT = 6;
@@ -127,6 +127,7 @@ export function migrateSave(input: unknown): GameState {
   });
   return {
     miniBest: {
+      constellation: finite(object(raw["miniBest"])["constellation"], 0, 6),
       treasure: finite(object(raw["miniBest"])["treasure"], 0, 6),
       stars: finite(object(raw["miniBest"])["stars"], 0, 18),
       fishing: finite(object(raw["miniBest"])["fishing"], 0, 5),
@@ -176,7 +177,12 @@ export function migrateSave(input: unknown): GameState {
   };
 }
 export type WorldAction =
-  | { type: "settle-mini"; id: string; game: "treasure" | "stars" | "fishing"; score: number }
+  | {
+      type: "settle-mini";
+      id: string;
+      game: "treasure" | "stars" | "fishing" | "constellation";
+      score: number;
+    }
   | { type: "plant"; index: number; crop: CropId }
   | { type: "water" | "harvest"; index: number }
   | { type: "settle-run"; id: string; score: number; coins: number; clear: boolean }
@@ -188,7 +194,7 @@ export type WorldAction =
   | { type: "feed-animal"; id: AnimalId };
 export function reduceWorld(state: GameState, action: WorldAction): GameState {
   if (action.type === "settle-mini") {
-    const limits = { treasure: 6, stars: 18, fishing: 5 };
+    const limits = { treasure: 6, stars: 18, fishing: 5, constellation: 6 };
     if (
       !Object.hasOwn(limits, action.game) ||
       !action.id ||

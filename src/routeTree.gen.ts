@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GreenhouseRouteImport } from './routes/greenhouse'
+import { Route as HouseRouteImport } from './routes/house'
 import { Route as RaceRouteImport } from './routes/race'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const GreenhouseRoute = GreenhouseRouteImport.update({
   path: '/greenhouse',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HouseRoute = HouseRouteImport.update({
+  id: '/house',
+  path: '/house',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RaceRoute = RaceRouteImport.update({
   id: '/race',
   path: '/race',
@@ -32,30 +38,34 @@ const RaceRoute = RaceRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/greenhouse': typeof GreenhouseRoute
+  '/house': typeof HouseRoute
   '/race': typeof RaceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/greenhouse': typeof GreenhouseRoute
+  '/house': typeof HouseRoute
   '/race': typeof RaceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/greenhouse': typeof GreenhouseRoute
+  '/house': typeof HouseRoute
   '/race': typeof RaceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/greenhouse' | '/race'
+  fullPaths: '/' | '/greenhouse' | '/house' | '/race'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/greenhouse' | '/race'
-  id: '__root__' | '/' | '/greenhouse' | '/race'
+  to: '/' | '/greenhouse' | '/house' | '/race'
+  id: '__root__' | '/' | '/greenhouse' | '/house' | '/race'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GreenhouseRoute: typeof GreenhouseRoute
+  HouseRoute: typeof HouseRoute
   RaceRoute: typeof RaceRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GreenhouseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/house': {
+      id: '/house'
+      path: '/house'
+      fullPath: '/house'
+      preLoaderRoute: typeof HouseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/race': {
       id: '/race'
       path: '/race'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GreenhouseRoute: GreenhouseRoute,
+  HouseRoute: HouseRoute,
   RaceRoute: RaceRoute,
 }
 export const routeTree = rootRouteImport

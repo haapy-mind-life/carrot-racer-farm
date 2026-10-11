@@ -17,7 +17,7 @@ const INFO = {
   },
   fishing: {
     name: "호숫가 낚시",
-    rule: "찌가 초록색 구간에 들어오면 E 또는 Space! 화면의 낚기 버튼도 좋아. 45초 안에 5마리를 만나봐.",
+    rule: "찌가 초록색 구간에 들어오면 낚기 버튼을 톡! 45초 안에 5마리를 만나봐.",
     goal: 5,
   },
 };
@@ -218,7 +218,7 @@ export function MiniGame({ kind, onClose }: { kind: MiniKind; onClose: () => voi
           g.phase === "playing" &&
           (kind === "fishing" ? (
             <button className="adv-primary" onClick={action}>
-              E · 낚기!
+              낚기!
             </button>
           ) : (
             <MovePad hold={movement.hold} />

@@ -414,3 +414,131 @@
     bottom: 8px;
   }
 }
+
+/* Touch controls stay large on tablets, phones, and desktop touch screens. */
+.adv-pad {
+  grid-template-columns: repeat(3, 60px);
+  grid-template-rows: repeat(2, 60px);
+  gap: 5px;
+}
+.adv-pad button {
+  min-height: 60px;
+  -webkit-touch-callout: none;
+}
+.adv-pad small {
+  display: block;
+  font: 600 11px system-ui;
+}
+.adv-viewport {
+  touch-action: none;
+}
+.adv-bottom {
+  z-index: 10;
+}
+.adv-npc {
+  pointer-events: auto;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  color: #40564d;
+  width: 120px;
+  touch-action: manipulation;
+}
+.adv-npc img {
+  margin: auto;
+}
+.adv-npc small {
+  display: block;
+  font-size: 11px;
+  padding: 3px;
+  background: #fff9e6c9;
+  border-radius: 9px;
+}
+.adv-globe {
+  position: absolute;
+  z-index: 20;
+  inset: 12px 12px auto auto;
+  width: min(390px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  background: #fffaf0;
+  border-radius: 20px;
+  padding: 12px;
+  box-shadow: 0 8px 30px #34554450;
+  touch-action: pan-y;
+}
+.adv-globe header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.adv-globe svg {
+  width: 100%;
+  max-height: 160px;
+}
+.adv-globe small {
+  display: block;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.adv-globe button {
+  border: 1px solid #d1ddc6;
+  background: #edf2df;
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 44px;
+  font: inherit;
+  color: #40564d;
+  cursor: pointer;
+}
+.adv-destinations {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  font-size: 13px;
+}
+.adv-workshop {
+  width: 100%;
+  margin-top: 8px;
+}
+.adv-drawing {
+  width: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.adv-game > .adv-pad {
+  width: max-content;
+  position: sticky;
+  bottom: 0;
+  background: #fffaf0e8;
+  padding: 5px;
+  border-radius: 18px;
+}
+@media (max-width: 420px) {
+  .adv-pad {
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(2, 54px);
+    gap: 3px;
+  }
+  .adv-pad button {
+    min-height: 54px;
+  }
+  .adv-interact {
+    max-width: 140px;
+    padding: 10px 8px;
+  }
+  .adv-bottom {
+    gap: 5px;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .adv-viewport {
+    height: 78dvh;
+    min-height: 230px;
+  }
+  .adv-game {
+    max-height: 94dvh;
+  }
+}

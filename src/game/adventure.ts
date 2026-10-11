@@ -1,6 +1,6 @@
 export type Point = { x: number; y: number };
 export type MiniKind = "treasure" | "stars" | "fishing";
-export const MAP = { width: 2800, height: 1800 };
+export const MAP = { width: 5600, height: 1800 };
 export const SPAWN = { x: 1350, y: 920 };
 export const BLOCKS = [
   { id: "house", x: 360, y: 330, w: 240, h: 180 },
@@ -26,7 +26,7 @@ export function stepPlayer(p: Point, d: Point, dt: number): Point {
   const length = Math.hypot(d.x, d.y) || 1;
   const step = (245 * clamp(dt, 0, 0.05)) / Math.max(1, length);
   const next = { x: p.x, y: p.y };
-  const x = clamp(p.x + d.x * step, 24, MAP.width - 24);
+  const x = (((p.x + d.x * step) % MAP.width) + MAP.width) % MAP.width;
   if (isWalkable({ x, y: p.y })) next.x = x;
   const y = clamp(p.y + d.y * step, 24, MAP.height - 24);
   if (isWalkable({ x: next.x, y })) next.y = y;
@@ -77,7 +77,9 @@ export function newMini(kind: MiniKind): Mini {
     direction: 1,
     cooldown: 0,
     feedback:
-      kind === "fishing" ? "찌가 초록색 가운데에 오면 E / Space!" : "방향키 또는 WASD로 움직여 봐!",
+      kind === "fishing"
+        ? "찌가 초록색 가운데에 오면 낚기 버튼을 톡!"
+        : "아래 방향 버튼을 꾹 눌러 움직여 봐!",
   };
 }
 export function stepMini(g: Mini, d: Point, delta: number) {
