@@ -25,6 +25,7 @@ import {
   HOUSE_TIERS,
   OCEAN_DISCOVERIES,
   AIRPORT,
+  RUNWAY,
   canLandPlane,
   nearWorld,
   onRunway,
@@ -123,6 +124,8 @@ function Cottage({ x, y, color, label }: { x: number; y: number; color: string; 
     </g>
   );
 }
+const mapX = (x: number) => 10 + (x / MAP.width) * 320;
+const mapY = (y: number) => 14 + (y / MAP.height) * 132;
 export function Village() {
   const { state, dispatch, ready } = useGame();
   const nav = useNavigate();
@@ -387,6 +390,7 @@ export function Village() {
     }
   };
   const [facing, setFacing] = useState(1);
+  const consoleShown = !mini && !drawing && !mapOpen && !garageOpen && !truckOpen;
   const viewport = useRef<HTMLDivElement>(null);
   const nearby = nearestPortal(pos);
   const friend = VILLAGES.find((v) => Math.hypot(v.x - pos.x, v.y - pos.y) < 105);
@@ -459,9 +463,14 @@ export function Village() {
       );
     }
   };
+  const offLand = useRef(false);
+  offLand.current = submarine || plane !== "off";
   useEffect(() => {
     // Incidents appear in the same world without requiring a separate mini-game.
-    const timeout = window.setTimeout(() => {
+    // They wait until the player is back on land, never interrupting a dive or a flight.
+    const interval = window.setInterval(() => {
+      if (offLand.current) return;
+      window.clearInterval(interval);
       setCallIndex((current) => {
         if (current < 0) {
           setCallPhase("reported");
@@ -471,7 +480,7 @@ export function Village() {
         return current;
       });
     }, 12000);
-    return () => window.clearTimeout(timeout);
+    return () => window.clearInterval(interval);
   }, []);
   const movement = useMovement(
     !mini && !drawing && !mapOpen && !garageOpen && !truckOpen,
@@ -1094,43 +1103,85 @@ export function Village() {
                   : (district?.name ?? "우리 마을")}
         </div>
         {mapOpen && region === "village" && (
-          <div className="adv-globe" role="dialog" aria-label="둥근 세계 지도">
+          <div className="adv-globe" role="dialog" aria-label="세계 지도">
             <header>
-              <b>우리 세계 한 바퀴</b>
+              <b>우리 세계 지도</b>
               <button onClick={() => setMapOpen(false)}>닫기</button>
             </header>
             <svg viewBox="0 0 340 160" aria-hidden="true">
-              <ellipse cx="170" cy="80" rx="155" ry="72" fill="#badde8" />
-              <ellipse cx="170" cy="80" rx="100" ry="72" fill="none" stroke="#eff9fa" />
-              <ellipse cx="170" cy="80" rx="155" ry="32" fill="none" stroke="#eff9fa" />
+              <rect x="10" y="14" width="320" height="132" rx="14" fill="#d7e7b9" />
+              <rect
+                x={mapX(5600)}
+                y="14"
+                width={mapX(OCEAN.start) - mapX(5600)}
+                height="132"
+                fill="#f2dfa2"
+              />
+              <rect
+                x={mapX(OCEAN.start)}
+                y="14"
+                width={330 - mapX(OCEAN.start)}
+                height="132"
+                rx="0"
+                fill="#5db3d6"
+              />
+              <text x={mapX(5600) + 4} y="28" fontSize="9" fill="#7a6a35">
+                바닷가
+              </text>
+              <text x={mapX(OCEAN.start) + 8} y="28" fontSize="9" fill="#fff">
+                큰 바다
+              </text>
+              <rect
+                x={mapX(RUNWAY.x1)}
+                y={mapY(RUNWAY.y) - 2}
+                width={mapX(RUNWAY.x2) - mapX(RUNWAY.x1)}
+                height="4"
+                fill="#6b6f7a"
+              />
+              <text x={mapX(AIRPORT.x)} y={mapY(RUNWAY.y) - 5} fontSize="9" textAnchor="middle">
+                ✈️
+              </text>
+              <text
+                x={mapX(COAST.harbor.x)}
+                y={mapY(COAST.harbor.y)}
+                fontSize="10"
+                textAnchor="middle"
+              >
+                ⚓
+              </text>
+              <text
+                x={mapX(COAST.truck.x)}
+                y={mapY(COAST.truck.y)}
+                fontSize="10"
+                textAnchor="middle"
+              >
+                🚚
+              </text>
               {VILLAGES.map((v, i) => (
                 <g key={v.id}>
                   <circle
-                    cx={35 + (v.x / MAP.width) * 270}
-                    cy={24 + (v.y / MAP.height) * 110}
-                    r="14"
+                    cx={mapX(v.x)}
+                    cy={mapY(v.y)}
+                    r="7"
                     fill={v.color}
+                    stroke="#fff"
+                    strokeWidth="1"
                   />
-                  <text
-                    x={35 + (v.x / MAP.width) * 270}
-                    y={29 + (v.y / MAP.height) * 110}
-                    textAnchor="middle"
-                    fontSize="12"
-                  >
+                  <text x={mapX(v.x)} y={mapY(v.y) + 3} textAnchor="middle" fontSize="8">
                     {i + 1}
                   </text>
                 </g>
               ))}
               <circle
-                cx={35 + (pos.x / MAP.width) * 270}
-                cy={24 + (pos.y / MAP.height) * 110}
+                cx={mapX(pos.x)}
+                cy={mapY(pos.y)}
                 r="5"
                 fill="#cb5e64"
                 stroke="white"
                 strokeWidth="2"
               />
             </svg>
-            <small>동쪽과 서쪽이 이어져요 · 마을을 누르면 여행!</small>
+            <small>마을을 누르면 바로 여행! 동쪽 끝에는 바닷가와 큰 바다가 있어요.</small>
             <div className="adv-destinations">
               {VILLAGES.map((v, i) => (
                 <button
@@ -1225,7 +1276,9 @@ export function Village() {
         )}
       </div>
       <div className="adv-footer">
-        <p role="status">{message}</p>
+        <p role="status" className={consoleShown ? "adv-sr" : undefined}>
+          {message}
+        </p>
         <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
       {truckOpen && (

@@ -1116,3 +1116,16 @@
   background: #0a2f4a;
   pointer-events: none;
 }
+
+/* Duplicate status line is kept for screen readers only while the on-map hint is visible. */
+.adv-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.hj-live-board button {
+  min-height: 44px;
+}

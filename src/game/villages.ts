@@ -43,7 +43,7 @@ export const VILLAGES = [
     symbol: "∞",
     friend: "오버 친구",
     outfit: "peach",
-    words: "동쪽으로 계속 걸으면 서쪽으로 이어져. 우리 세계를 한 바퀴 돌아보자!",
+    words: "동쪽으로 쭉 걸으면 바닷가가 나와. 비행장과 잠수함도 있어!",
   },
   {
     id: "farm",
