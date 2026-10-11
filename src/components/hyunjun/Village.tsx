@@ -12,6 +12,10 @@ import {
   type Point,
 } from "@/game/adventure";
 import { Mascot } from "./Art";
+import { FriendArt } from "./FriendArt";
+import { Garage, loadCarId, saveCarId } from "./Garage";
+import { CarArt } from "./CarArt";
+import { carById } from "@/game/cars";
 import { Shell } from "./Shell";
 import { MiniGame } from "./MiniGame";
 import { useMovement } from "./useMovement";
@@ -84,6 +88,9 @@ export function Village() {
   const [mapOpen, setMapOpen] = useState(false);
   const [message, setMessage] = useState("현준아, 오늘은 어디로 가볼까? 길을 따라 걸어가 봐!");
   const [walking, setWalking] = useState(false);
+  const [garageOpen, setGarageOpen] = useState(false);
+  const [carId, setCarId] = useState(loadCarId);
+  const [driving, setDriving] = useState(false);
   const [facing, setFacing] = useState(1);
   const viewport = useRef<HTMLDivElement>(null);
   const nearby = nearestPortal(pos);
@@ -93,7 +100,7 @@ export function Village() {
   )[0];
   const nearDrawing = Math.hypot(pos.x - 5010, pos.y - 520) < 110;
   const interact = () => {
-    if (!ready || mini || drawing) return;
+    if (!ready || mini || drawing || garageOpen) return;
     if (nearDrawing) {
       setDrawing(true);
       return;
@@ -115,7 +122,7 @@ export function Village() {
       );
     }
   };
-  const movement = useMovement(!mini && !drawing && !mapOpen, interact);
+  const movement = useMovement(!mini && !drawing && !mapOpen && !garageOpen, interact);
   const direction = useRef(movement.direction);
   direction.current = movement.direction;
   useEffect(() => {
@@ -127,7 +134,7 @@ export function Village() {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (mini || drawing || mapOpen) return;
+    if (mini || drawing || mapOpen || garageOpen) return;
     let raf = 0,
       last = 0;
     const loop = (now: number) => {
@@ -147,7 +154,7 @@ export function Village() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mini, drawing, mapOpen]);
+  }, [mini, drawing, mapOpen, garageOpen]);
   const camera = cameraAt(pos, size.w, size.h);
   return (
     <Shell
@@ -157,6 +164,7 @@ export function Village() {
     >
       <div className="adv-toolbar">
         <span>✦ 오늘의 모험은 네 마음대로</span>
+        <button onClick={() => setGarageOpen(true)}>🚗 자동차 100대</button>
         <button onClick={() => setMapOpen((v) => !v)} aria-expanded={mapOpen}>
           지도 {mapOpen ? "접기" : "보기"}
         </button>
@@ -387,7 +395,7 @@ export function Village() {
               <i />
             </div>
           ))}
-          {VILLAGES.map((v) => (
+          {VILLAGES.map((v, friendIndex) => (
             <button
               key={v.id}
               className="adv-friend adv-npc"
@@ -399,7 +407,7 @@ export function Village() {
               }
               aria-label={`${v.friend} · 이야기`}
             >
-              <Mascot outfit={v.outfit} small />
+              <FriendArt index={friendIndex} />
               <b>{v.friend}</b>
               <small>{v.name}</small>
             </button>
@@ -418,9 +426,9 @@ export function Village() {
             style={{ left: pos.x, top: pos.y }}
           >
             <div style={{ transform: `scaleX(${facing})` }}>
-              <Mascot outfit={state.outfit} small />
+              {driving ? <CarArt car={carById(carId)} size={98} /> : <Mascot outfit={state.outfit} small />}
             </div>
-            <b>현준</b>
+            <b>{driving ? "현준 🚗" : "현준"}</b>
           </div>
         </div>
         <div className="adv-location">
@@ -497,6 +505,7 @@ export function Village() {
           <div className="adv-bottom adv-console">
             <p className="adv-touch-hint">{message}</p>
             <Joystick onMove={movement.setStick} />
+            <button className="hj-car-mode" onClick={() => { if (driving) setDriving(false); else setGarageOpen(true); }}>{driving ? "차에서 내리기" : "자동차 타기"}</button>
             <div className="adv-action-buttons">
               <button className="adv-map-button" onClick={() => setMapOpen(true)}>
                 지도
@@ -520,6 +529,7 @@ export function Village() {
         <p role="status">{message}</p>
         <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
+      {garageOpen && <Garage selected={carId} onSelect={id => { setCarId(id); saveCarId(id); setDriving(true); }} onClose={() => setGarageOpen(false)} />}
       {drawing && (
         <Constellation
           onClose={() => {
