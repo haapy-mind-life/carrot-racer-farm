@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "node --experimental-strip-types --test src/lib/*.test.ts src/game/*.test.ts",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "build:pages": "vite build --config vite.pages.config.ts && node scripts/finalize-pages.mjs",
+    "preview:pages": "vite preview --config vite.pages.config.ts --outDir dist-pages"
   },
   "overrides": {
     "rolldown": "1.2.1"
