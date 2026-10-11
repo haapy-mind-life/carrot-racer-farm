@@ -91,3 +91,18 @@ flowchart LR
 5. 이전 소방/경찰/구급, 자동차 120종, 러너·농장·원래 집 꾸미기, 별코인 저장 회귀.
 
 **중요:** GitHub Actions 성공만으로 실제 기기 화면, 잠수 조작, 고성능 렌더링 및 아동의 플레이 적합성이 확인되지는 않는다. 실기기 UAT가 끝나기 전에는 DEVICE PASS라고 보고하지 않는다.
+
+## 6. 구현 완료 후 GitHub Pages 검증 영수증
+
+기능 PR #17의 최종 병합 커밋은 `a57bc204eeac6a5295f612733a9df235b8b5ca72`다.
+
+| 검증 단계 | 상태 | 증거 |
+| --- | --- | --- |
+| CODE | **DONE** | [PR #17 merged](https://github.com/haapy-mind-life/carrot-racer-farm/pull/17) |
+| Unit / TypeScript / ESLint | **PASS** | [Hyunjun Game CI 38108873838](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38108873838) |
+| PR 정적 Pages 빌드 | **PASS** | [Pages build 38108873839](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38108873839) |
+| main Pages 빌드 및 배포 | **SUCCESS** | [main run 38108912871](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38108912871) |
+| 게임 주소 | 배포 작업 성공 | https://haapy-mind-life.github.io/carrot-racer-farm/ |
+| 삼성 브라우저/S Pen 실사용 | **NOT RUN** | 보호자/현준이가 실제 기기에서 월드·바다·잠수함·증축/푸드트럭 UAT 필요 |
+
+배포 Job 성공은 정적 파일 배포 결과이며 게임 화면 렌더·바다 실제 표시·버튼 사용성 또는 프레임 안정성을 **직접 시각 검증한 증거가 아니다**. 아이가 게임에서 `해변 안내`로 같은 지도의 x≈6180에 이동한 뒤 직접 해안과 항구를 탐험하고 잠수·증축·판매할 수 있는지 확인한다.
