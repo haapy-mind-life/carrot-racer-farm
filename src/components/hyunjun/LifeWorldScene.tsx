@@ -32,6 +32,7 @@ export function LifeWorldScene({ region, player, following, holding, submarine, 
         <text y="-25" textAnchor="middle" fontSize="49">🍕 🥤 🍛</text>
       </g>
       <text x="2290" y="1015" fontSize="75">🧑</text>
+      {!following && <g transform="translate(1490 1250)"><rect x="-43" y="-75" width="86" height="95" rx="21" fill="#8ed1de" stroke="#ffe0a6" strokeWidth="8"/><rect x="-54" y="-146" width="109" height="79" rx="19" fill="#f6eee8" stroke="#87aabc" strokeWidth="7"/><circle cx="-24" cy="-112" r="10" fill="#3c7596"/><circle cx="23" cy="-112" r="10" fill="#3c7596"/><path d="M-14-90Q0-80 16-90" stroke="#3c7596" fill="none" strokeWidth="5"/><text x="0" y="-170" textAnchor="middle" fontSize="29" fill="#546d67">🤖 아빠 로봇</text></g>}
       <g transform="translate(3100 980)">
         <rect x="-130" y="-20" width="310" height="52" rx="12" fill="#a87b57" stroke="#f8e8bb" strokeWidth="7"/>
         <text x="10" y="-70" textAnchor="middle" fill="#2e6174" fontWeight="bold" fontSize="40">잠수함 항구</text>
