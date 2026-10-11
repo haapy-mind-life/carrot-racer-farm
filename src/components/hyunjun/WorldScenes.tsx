@@ -79,7 +79,7 @@ export function WorldScenes({ player, call, phase, progress, thiefStep, siren, d
           </>
         )}
       </g>
-      {buildings.map((building) => <MapBuilding key={building.key} {...building} />)}
+      {buildings.map((building) => <MapBuilding key={building.key} x={building.x} y={building.y} title={building.title} color={building.color} symbol={building.symbol} />)}
       {(["fire", "ambulance", "police"] as const).map((kind) => (
         <g key={kind}>
           <circle cx={STATIONS[kind].x} cy={STATIONS[kind].y} r="52"
