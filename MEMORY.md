@@ -81,3 +81,13 @@
 - 최신 근거: `docs/world-expansion/2026-10-11-v0.1.0/10_UNIFIED_WORLD_REBUILD.md`; 코드/CI/배포/실기기 단계를 구분한다.
 - 기존 120종 차고, 구조 신고, 러너·농장, 푸드트럭 주문/별코인, 기존 가구 꾸미기는 보존 대상이다.
 - **삼성 브라우저/S Pen/현준이 직접 플레이 UAT는 계속 NOT RUN**. Pages 성공은 시각·조작의 실기기 통과 증거가 아니다.
+
+## 통합 월드 정정 작업 최종 릴리스 기록 — 2026-10-11
+
+- 사용자 지적에 따른 **원래 지도 + 해안/바다 하나의 월드** 구현: [PR #17](https://github.com/haapy-mind-life/carrot-racer-farm/pull/17) `main` 병합 완료.
+- 확정된 게임 배포 SHA: `a57bc204eeac6a5295f612733a9df235b8b5ca72`.
+- [Direct Game Play (GitHub Pages) 38108912871](https://github.com/haapy-mind-life/carrot-racer-farm/actions/runs/38108912871): **빌드 검증 및 Pages deploy SUCCESS**.
+- 기존 마을 x0..5600과 새 해안 x5600..7380, 큰 바다 x7380..10200이 동일한 외부 월드 좌표. 해변 푸드트럭·로봇·항구 및 수중 탐험 포함.
+- **기존 우리 집 x≈480**을 `houseTier=1..4`로 별코인 증축; 기존 v2 세이브와 가구 꾸미기 유지.
+- 본 건의 상세 변경·수락 기준·미확인 실기기 검증: `docs/world-expansion/2026-10-11-v0.1.0/10_UNIFIED_WORLD_REBUILD.md`.
+- **실제 삼성 브라우저/S Pen·현준이 플레이·FPS UAT는 NOT RUN**. 이전 별도 해변/해저 화면을 최신 제품 구조로 다시 설명하지 말 것.
