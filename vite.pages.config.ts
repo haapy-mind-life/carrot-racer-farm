@@ -13,7 +13,7 @@ import { defineConfig } from "vite";
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
-  base: process.env.PAGES_BASE_PATH ?? "/carrot-racer-farm/",
+  base: process.env.PAGES_BASE_PATH ?? "/phj-game/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
