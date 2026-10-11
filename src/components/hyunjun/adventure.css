@@ -736,3 +736,18 @@
 @keyframes hj-bubble { to { transform:translateY(-15px);opacity:.45;} }
 @media (prefers-reduced-motion: reduce) { .hj-route-line,.hj-sos-ring,.hj-flame,.hj-bubble,.hj-water-jet,.hj-station-alert {animation:none;} }
 @media (max-width:600px) { .hj-live-board { width:min(255px,calc(100% - 25px)); top:10px;right:8px;max-height:34%;padding:6px; } .hj-live-board button {font-size:11px;min-height:38px;} .hj-live-board strong {font-size:11px;} .hj-diver {font-size:45px;} }
+
+.hj-life-scene{position:absolute;left:0;top:0;display:block;pointer-events:none}
+.hj-life-hud{position:absolute;top:12px;right:12px;max-width:min(340px,60%);z-index:25;display:flex;flex-direction:column;gap:4px;padding:12px 16px;border-radius:18px;background:#fff9eaf2;border:3px solid #fffdf1;box-shadow:0 4px 15px #244b4933;color:#405b4e;font-size:14px}
+.hj-life-hud small{font-size:11px}
+.hj-food-backdrop{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:12px;background:#30463899}
+.hj-food-shop{background:#fff8e7;border-radius:25px;padding:18px;max-height:90dvh;overflow:auto;width:min(680px,100%);color:#405a4b;box-shadow:0 15px 50px #2a3b3255}
+.hj-food-shop header{display:flex;align-items:center;justify-content:space-between}
+.hj-food-shop h2{font-size:25px;margin:5px}
+.hj-food-shop button{font:inherit;min-height:44px;padding:8px 13px;border:2px solid #cad9ba;background:#f0f3df;color:#405947;border-radius:14px;touch-action:manipulation;cursor:pointer}
+.hj-food-shop button:focus-visible{outline:3px solid #547ec4;outline-offset:2px}
+.hj-food-menu{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.hj-food-menu button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:115px;overflow:hidden}
+.hj-food-menu button[aria-pressed="true"]{background:#d8efd9;border-color:#70a77b}
+.hj-food-menu small{font-size:11px}
+@media (max-width:600px){.hj-life-hud{max-width:56%;padding:6px 8px;font-size:11px}.hj-food-menu{grid-template-columns:repeat(2,minmax(0,1fr))}.hj-food-shop{padding:10px}.hj-food-menu button{min-height:105px}}
