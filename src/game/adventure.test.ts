@@ -18,7 +18,7 @@ test("lake and buildings block walking while all entrances are reachable ground"
 });
 test("camera never exposes space outside the map", () => {
   assert.deepEqual(cameraAt({ x: 24, y: 24 }, 800, 500), { x: 0, y: 0 });
-  assert.deepEqual(cameraAt({ x: 5576, y: 1776 }, 800, 500), { x: 4800, y: 1300 });
+  assert.deepEqual(cameraAt({ x: 10176, y: 1776 }, 800, 500), { x: 9400, y: 1300 });
 });
 test("treasure can be won, rewards freeze, and restart clears progress", () => {
   const g = newMini("treasure");

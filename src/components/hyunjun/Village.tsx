@@ -18,12 +18,20 @@ import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
 import { LifeWorldScene } from "./LifeWorldScene";
+import { UnifiedCoast, GrowingHome } from "./UnifiedCoast";
+import {
+  COAST,
+  OCEAN,
+  HOUSE_TIERS,
+  OCEAN_DISCOVERIES,
+  nearWorld,
+  stepSubmarine,
+} from "@/game/unified-world";
 import {
   FOOD_MENU,
   LIFE_MAPS,
   LIFE_SPOTS,
   LIFE_REGION_LABELS,
-  nearSpot,
   nearbyTreasure,
   nextFoodOrder,
   freshFoodOrderId,
@@ -122,39 +130,36 @@ export function Village() {
   const [message, setMessage] = useState("현준아, 오늘은 어디로 가볼까? 길을 따라 걸어가 봐!");
   const [walking, setWalking] = useState(false);
   const [region, setRegion] = useState<LifeRegion>("village");
-  const [lifePos, setLifePos] = useState<Point>({ ...LIFE_SPOTS.coastArrival });
+  const [lifePos, setLifePos] = useState<Point>({ ...LIFE_SPOTS.mansionInside });
   const [holding, setHolding] = useState<FoodId | null>(null);
   const [robotFollowing, setRobotFollowing] = useState(false);
   const [submarine, setSubmarine] = useState(false);
+  const [submerged, setSubmerged] = useState(false);
   const [orderIndex, setOrderIndex] = useState(0);
   const [order, setOrder] = useState<FoodOrder>(() => nextFoodOrder(0, freshFoodOrderId()));
   const [truckOpen, setTruckOpen] = useState(false);
   const saleBusy = useRef(false);
-  const nearLife = (target: Point, radius = 180) => nearSpot(lifePos, target, radius);
-  const travelTo = (next: Exclude<LifeRegion, "village">, point: Point) => {
-    setRegion(next);
-    setLifePos({ ...point });
+  const nearLife = (point: Point, range = 180) => nearWorld(pos, point, range);
+  const atOriginalHouse = nearWorld(pos, { x: 480, y: 565 }, 185);
+  const goHomeInside = () => {
+    setRegion("mansion");
+    setLifePos({ ...LIFE_SPOTS.mansionInside });
     setDriving(false);
-    setDiving(false);
-    setTruckOpen(false);
-    setMapOpen(false);
-    setSubmarine(next === "deep-sea");
-    setMessage(LIFE_REGION_LABELS[next] + "에 도착했어! 직접 움직여 탐험하자.");
-  };
-  const leaveLife = () => {
-    setRegion("village");
-    setTruckOpen(false);
     setSubmarine(false);
-    setPos({ x: LIFE_SPOTS.villageGate.x, y: LIFE_SPOTS.villageGate.y });
-    returnPosition = { ...LIFE_SPOTS.villageGate };
-    setMessage("열 개 마을로 돌아왔어!");
+    setMessage("현준이 집 안으로 들어왔어! 부엌에서 음식을 집고 식탁에서 먹어 봐.");
+  };
+  const backToWorld = () => {
+    setRegion("village");
+    setPos({ x: 480, y: 610 });
+    returnPosition = { x: 480, y: 610 };
+    setMessage("내가 키운 집 앞으로 돌아왔어!");
   };
   const sellPreparedFood = () => {
     if (
       saleBusy.current ||
       order.phase !== "prepared" ||
       holding !== order.foodId ||
-      !nearLife(LIFE_SPOTS.foodCustomer, 220)
+      !nearLife(COAST.customer, 225)
     )
       return;
     saleBusy.current = true;
@@ -163,93 +168,106 @@ export function Village() {
     const next = orderIndex + 1;
     setOrderIndex(next);
     setOrder(nextFoodOrder(next, freshFoodOrderId()));
-    setMessage("음식을 손님에게 전달했어! 별코인을 벌었어!");
+    setMessage("손님에게 음식을 전달했어! 별코인을 벌었어!");
     window.setTimeout(() => {
       saleBusy.current = false;
     }, 300);
   };
-  const doLifeAction = () => {
-    if (region === "coast") {
-      if (nearLife(LIFE_SPOTS.coastExit)) {
-        leaveLife();
-        return;
-      }
-      if (nearLife(LIFE_SPOTS.mansionDoor, 280)) {
-        travelTo("mansion", LIFE_SPOTS.mansionInside);
-        return;
-      }
-      if (nearLife(LIFE_SPOTS.foodCustomer, 220) && order.phase === "prepared") {
-        sellPreparedFood();
-        return;
-      }
-      if (nearLife(LIFE_SPOTS.foodTruck, 275)) {
-        setTruckOpen(true);
-        setMessage("푸드트럭에서 음식을 골라 직접 손님에게 가져다주자!");
-        return;
-      }
-      if (nearLife(LIFE_SPOTS.harbor, 290)) {
-        travelTo("deep-sea", LIFE_SPOTS.seaStart);
-        return;
-      }
-      if (nearLife(LIFE_SPOTS.robot, 240)) {
-        setRobotFollowing((v) => !v);
-        setMessage(
-          "아빠 로봇: " + (robotFollowing ? "다음에 또 놀자!" : "현준아, 같이 놀러 가자!"),
-        );
-        return;
-      }
+  const upgradeHome = () => {
+    const next = HOUSE_TIERS[state.houseTier];
+    if (!next) {
+      setMessage("우리 집이 최고의 성으로 완성됐어!");
+      return;
     }
+    if (state.money < next.cost) {
+      setMessage("집을 키우려면 " + next.cost + " 별코인이 필요해. 푸드트럭 장사를 해보자!");
+      return;
+    }
+    dispatch({ type: "upgrade-house" });
+    setMessage("축하해! 우리 집이 " + next.name + "으로 커졌어!");
+  };
+  const actionLife = () => {
     if (region === "mansion") {
-      if (nearLife(LIFE_SPOTS.mansionExit, 260)) {
-        travelTo("coast", { x: LIFE_SPOTS.mansionDoor.x, y: LIFE_SPOTS.mansionDoor.y + 190 });
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) {
+        backToWorld();
         return;
       }
-      if (nearLife(LIFE_SPOTS.mansionKitchen, 300)) {
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) {
         setHolding("pizza");
-        setMessage("피자를 손에 들었어! 식탁으로 가서 먹어 보자.");
+        setMessage("피자를 손에 들었어! 식탁에서 먹어 보자.");
         return;
       }
-      if (nearLife(LIFE_SPOTS.mansionDining, 310) && holding) {
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionDining, 310) && holding) {
         setHolding(null);
         setMessage("냠냠! 맛있게 먹었어!");
         return;
       }
+      setMessage("부엌이나 식탁으로 직접 걸어가 봐!");
+      return;
     }
-    if (region === "deep-sea") {
-      if (nearLife(LIFE_SPOTS.seaReturn, 310)) {
-        travelTo("coast", LIFE_SPOTS.harbor);
+    if (submarine) {
+      if (nearLife(COAST.harbor, 220)) {
+        setSubmarine(false);
+        setSubmerged(false);
+        setPos({ x: COAST.harbor.x - 150, y: COAST.harbor.y + 40 });
+        setMessage("항구에 돌아왔어!");
         return;
       }
-      const treasure = nearbyTreasure(lifePos);
-      if (treasure) {
-        if (!state.visitedSeaTreasures.includes(treasure.id))
-          dispatch({ type: "explore-sea", id: treasure.id });
-        setMessage(treasure.name + "을 발견했어! 바닷속 탐험 성공!");
+      const found = OCEAN_DISCOVERIES.find((site) => nearLife(site, 190));
+      if (found) {
+        dispatch({ type: "explore-sea", id: found.id });
+        setMessage(found.name + " 발견! 바닷속 탐험 성공!");
         return;
       }
+      setSubmerged((v) => !v);
+      setMessage(submerged ? "잠수함이 수면으로 올라왔어." : "잠수함이 바닷속 깊이 잠수했어!");
+      return;
     }
-    setMessage("조이스틱으로 가까이 다가가서 행동 버튼을 눌러 봐!");
+    if (atOriginalHouse) {
+      goHomeInside();
+      return;
+    }
+    if (nearLife(COAST.customer, 225) && order.phase === "prepared") {
+      sellPreparedFood();
+      return;
+    }
+    if (nearLife(COAST.truck, 275)) {
+      setTruckOpen(true);
+      setMessage("손님이 주문한 메뉴를 준비하자!");
+      return;
+    }
+    if (nearLife(COAST.harbor, 290)) {
+      setDriving(false);
+      setSubmarine(true);
+      setSubmerged(false);
+      setPos({ x: OCEAN.start + 300, y: COAST.harbor.y });
+      setMessage("잠수함 탑승! 오른쪽 버튼으로 잠수하고 조이스틱으로 탐험하자.");
+      return;
+    }
+    if (nearLife(COAST.robot, 240)) {
+      setRobotFollowing((v) => !v);
+      setMessage(robotFollowing ? "로봇이 여기서 쉬고 있어." : "아빠 로봇이 함께 따라다녀!");
+      return;
+    }
+    setMessage("집·푸드트럭·항구에 가까이 가서 행동을 눌러 봐.");
   };
-  const lifeActionLabel = () => {
-    if (region === "coast") {
-      if (nearLife(LIFE_SPOTS.coastExit)) return "마을로 돌아가기";
-      if (nearLife(LIFE_SPOTS.mansionDoor, 280)) return "대왕집 들어가기";
-      if (nearLife(LIFE_SPOTS.foodCustomer, 220) && order.phase === "prepared")
-        return "손님에게 음식 주기";
-      if (nearLife(LIFE_SPOTS.foodTruck, 275)) return "푸드트럭 장사";
-      if (nearLife(LIFE_SPOTS.harbor, 290)) return "잠수함 타기";
-      if (nearLife(LIFE_SPOTS.robot, 240))
-        return robotFollowing ? "로봇 쉬게 하기" : "아빠 로봇 따라오기";
-    }
+  const actionLifeLabel = () => {
     if (region === "mansion") {
-      if (nearLife(LIFE_SPOTS.mansionExit, 260)) return "마당으로 나가기";
-      if (nearLife(LIFE_SPOTS.mansionKitchen, 300)) return "음식 집기";
-      if (nearLife(LIFE_SPOTS.mansionDining, 310) && holding) return "음식 먹기";
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) return "집 밖으로";
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) return "음식 집기";
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionDining, 310) && holding) return "음식 먹기";
+      return "집 탐험";
     }
-    if (region === "deep-sea") {
-      if (nearLife(LIFE_SPOTS.seaReturn, 310)) return "항구로 돌아가기";
-      if (nearbyTreasure(lifePos)) return "바닷속 보물 발견!";
+    if (submarine) {
+      if (nearLife(COAST.harbor, 220)) return "잠수함 하차";
+      if (OCEAN_DISCOVERIES.some((site) => nearLife(site, 190))) return "바다 보물 발견";
+      return submerged ? "수면으로 상승" : "바닷속 잠수";
     }
+    if (atOriginalHouse) return "우리 집 들어가기";
+    if (nearLife(COAST.customer, 225) && order.phase === "prepared") return "음식 전달";
+    if (nearLife(COAST.truck, 275)) return "푸드트럭 영업";
+    if (nearLife(COAST.harbor, 290)) return "잠수함 타기";
+    if (nearLife(COAST.robot, 240)) return "아빠 로봇 동행";
     return "주변 살펴보기";
   };
   const [garageOpen, setGarageOpen] = useState(false);
@@ -282,6 +300,8 @@ export function Village() {
     if (!call || !emergencyVehicle) return;
     const start = STATIONS[call.kind];
     setDriving(true);
+    setSubmarine(false);
+    setSubmerged(false);
     setDiving(false);
     setCamping(false);
     setPos({ x: start.x, y: start.y });
@@ -334,14 +354,15 @@ export function Village() {
   const nearDrawing = Math.hypot(pos.x - 5010, pos.y - 520) < 110;
   const interact = () => {
     if (!ready || mini || drawing || garageOpen) return;
-    if (region !== "village") {
-      doLifeAction();
+    if (region === "mansion") {
+      actionLife();
       return;
     }
-    if (!driving && nearSpot(pos, LIFE_SPOTS.villageGate, 205)) {
-      travelTo("coast", LIFE_SPOTS.coastArrival);
+    if (submarine || atOriginalHouse || pos.x > 5700) {
+      actionLife();
       return;
     }
+
     if (call && callPhase === "dispatched" && nearTarget) {
       helpCall();
       return;
@@ -428,11 +449,15 @@ export function Village() {
       setWalking(moving);
       if (d.x) setFacing(d.x > 0 ? 1 : -1);
       const dt = last ? (now - last) / 1000 : 0;
-      if (moving && region !== "village") setLifePos((p) => stepLifePlayer(region, p, d, dt));
+      if (moving && region === "mansion") setLifePos((p) => stepLifePlayer("mansion", p, d, dt));
       if (moving && region === "village")
         setPos((p) => {
-          const next = diving ? diveStep(p, d, dt) : stepPlayer(p, d, dt * (driving ? 1.48 : 1));
-          returnPosition = next;
+          const next = submarine
+            ? stepSubmarine(p, d, dt)
+            : diving
+              ? diveStep(p, d, dt)
+              : stepPlayer(p, d, dt * (driving ? 1.48 : 1));
+          returnPosition = submarine ? { x: COAST.harbor.x - 150, y: COAST.harbor.y + 40 } : next;
           return next;
         });
       last = now;
@@ -440,7 +465,7 @@ export function Village() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mini, drawing, mapOpen, garageOpen, truckOpen, diving, driving, region]);
+  }, [mini, drawing, mapOpen, garageOpen, truckOpen, diving, driving, region, submarine]);
   const camera =
     region === "village"
       ? cameraAt(pos, size.w, size.h)
@@ -457,13 +482,28 @@ export function Village() {
       <div className="adv-toolbar">
         <span>✦ 오늘의 모험은 네 마음대로 · {state.money} 별코인</span>
         <button
-          onClick={() =>
-            region === "village" ? travelTo("coast", LIFE_SPOTS.coastArrival) : leaveLife()
-          }
+          onClick={() => {
+            if (region !== "village") {
+              backToWorld();
+              return;
+            }
+            const coastArrival = { x: 6180, y: 940 };
+            setSubmarine(false);
+            setSubmerged(false);
+            setDriving(false);
+            setPos(coastArrival);
+            returnPosition = coastArrival;
+            setMessage("같은 월드의 해안 마을이야! 서쪽 길을 따라 원래 마을까지 걸어갈 수도 있어.");
+          }}
         >
-          🌊 {region === "village" ? "큰 바다 · 대왕집" : "마을로 돌아가기"}
+          🌊 {region === "village" ? "해변 안내" : "집 밖으로"}
         </button>
-        <button onClick={() => setGarageOpen(true)}>🚗 자동차 120대</button>
+        <button onClick={() => setGarageOpen(true)} disabled={submarine}>
+          🚗 자동차 120대
+        </button>
+        {region === "village" && (
+          <span>🏠 우리 집 Lv.{state.houseTier}/4 · 🌊 해안과 바다도 하나의 월드</span>
+        )}
         <button onClick={() => setMapOpen((v) => !v)} aria-expanded={mapOpen}>
           지도 {mapOpen ? "접기" : "보기"}
         </button>
@@ -610,7 +650,9 @@ export function Village() {
                 {[986, 1006, 1026, 1046].map((y) => (
                   <path key={y} d={`M1985 ${y}h100`} stroke="#a78165" strokeWidth="3" />
                 ))}
-                <Cottage x={360} y={330} color="#df9e91" label="HOME" />
+                <g transform="translate(245 155)">
+                  <GrowingHome tier={state.houseTier} />
+                </g>
                 <Cottage x={2100} y={1170} color="#92b8a0" label="FARM" />
                 <g transform="translate(2260 300)">
                   <rect x="5" y="15" width="30" height="155" rx="10" fill="#f2bd70" />
@@ -684,6 +726,13 @@ export function Village() {
                   </g>
                 ))}
               </svg>
+              <UnifiedCoast
+                houseTier={state.houseTier}
+                submarine={submarine}
+                submerged={submerged}
+                discovered={state.visitedSeaTreasures}
+                robotFollowing={robotFollowing}
+              />
               <WorldScenes
                 player={pos}
                 call={call}
@@ -694,14 +743,6 @@ export function Village() {
                 diving={diving}
                 camping={camping}
               />
-              <div
-                className="adv-gate"
-                style={{ left: LIFE_SPOTS.villageGate.x, top: LIFE_SPOTS.villageGate.y }}
-              >
-                <span>새로운 세계</span>
-                <b>🌊 큰 바다 · 대왕집</b>
-                <i />
-              </div>
               {PORTALS.map((g) => (
                 <div
                   className={`adv-gate ${nearby?.id === g.id ? "near" : ""}`}
@@ -755,7 +796,64 @@ export function Village() {
                 style={{ left: pos.x, top: pos.y }}
               >
                 <div style={{ transform: `scaleX(${facing})` }}>
-                  {diving ? (
+                  {submarine ? (
+                    <svg
+                      className="hj-submarine-player"
+                      width="176"
+                      height="110"
+                      viewBox="0 0 176 110"
+                      role="img"
+                      aria-label="노란 잠수함"
+                    >
+                      <ellipse
+                        cx="83"
+                        cy="76"
+                        rx="74"
+                        ry="29"
+                        fill="#ffc956"
+                        stroke="#f9f1cc"
+                        strokeWidth="7"
+                      />
+                      <path
+                        d="M71 51V19H124"
+                        fill="none"
+                        stroke="#ffd977"
+                        strokeWidth="17"
+                        strokeLinecap="round"
+                      />
+                      <rect x="74" y="18" width="32" height="33" rx="7" fill="#ffc956" />
+                      <circle
+                        cx="48"
+                        cy="72"
+                        r="17"
+                        fill="#a3e8ec"
+                        stroke="white"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="90"
+                        cy="72"
+                        r="17"
+                        fill="#a3e8ec"
+                        stroke="white"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="131"
+                        cy="72"
+                        r="17"
+                        fill="#a3e8ec"
+                        stroke="white"
+                        strokeWidth="4"
+                      />
+                      <path
+                        d="M14 66L2 44V95L14 83"
+                        fill="#ffdd72"
+                        stroke="#f8f0d0"
+                        strokeWidth="5"
+                      />
+                    </svg>
+                  ) : diving ? (
                     <span className="hj-diver">🤿</span>
                   ) : driving ? (
                     <CarArt car={carById(carId)} size={98} />
@@ -763,7 +861,7 @@ export function Village() {
                     <Mascot outfit={state.outfit} small />
                   )}
                 </div>
-                <b>{driving ? "현준 🚗" : "현준"}</b>
+                <b>{submarine ? "현준 잠수함" : driving ? "현준 🚗" : "현준"}</b>
               </div>
             </>
           ) : (
@@ -774,11 +872,32 @@ export function Village() {
               holding={holding}
               submarine={submarine}
               explored={state.visitedSeaTreasures}
+              houseTier={state.houseTier}
             />
           )}
         </div>
         {region === "village" && (
           <div className="hj-live-board" role="status">
+            {atOriginalHouse && (
+              <button onClick={upgradeHome} disabled={state.houseTier >= 4}>
+                🏡{" "}
+                {state.houseTier >= 4
+                  ? "우리 집 최대 단계"
+                  : "우리 집 확장 · " + HOUSE_TIERS[state.houseTier]!.cost + " 별코인"}
+              </button>
+            )}
+            {submarine && (
+              <button
+                onClick={() => {
+                  setSubmerged((v) => !v);
+                  setMessage(
+                    submerged ? "바닷속에서 수면으로 올라왔어." : "잠수함이 바닷속으로 내려갔어!",
+                  );
+                }}
+              >
+                🐠 {submerged ? "수면으로 올라가기" : "바닷속 잠항"}
+              </button>
+            )}
             <button onClick={reportCall}>
               ☎️{" "}
               {callPhase === "idle" || callPhase === "resolved" ? "새로운 신고 받기" : "다른 신고"}
@@ -862,6 +981,9 @@ export function Village() {
             <b>{LIFE_REGION_LABELS[region]}</b>
             <small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small>
             <span>💰 {state.money} 별코인</span>
+            {region === "mansion" && (
+              <button onClick={() => void nav({ to: "/house" })}>🪑 기존 우리 집 꾸미기</button>
+            )}
             {holding && (
               <span>손에 든 음식: {FOOD_MENU.find((food) => food.id === holding)?.name}</span>
             )}
@@ -965,38 +1087,36 @@ export function Village() {
                   region === "village"
                     ? setMapOpen(true)
                     : region === "coast"
-                      ? travelTo("mansion", LIFE_SPOTS.mansionInside)
-                      : travelTo("coast", LIFE_SPOTS.coastArrival)
+                      ? goHomeInside()
+                      : backToWorld()
                 }
               >
                 {region === "village" ? "지도" : region === "coast" ? "큰 집" : "해변"}
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
-                {region !== "village"
-                  ? lifeActionLabel()
-                  : !driving && nearSpot(pos, LIFE_SPOTS.villageGate, 205)
-                    ? "큰 바다 여행"
-                    : diving
-                      ? "물 밖으로 나오기"
-                      : call && callPhase === "dispatched" && nearTarget
-                        ? call.kind === "fire"
-                          ? "물 뿌리기"
-                          : call.kind === "police"
-                            ? "도둑 잡기"
-                            : "사람 돕기"
-                        : isNearCamp(pos) && !driving
-                          ? "캠핑하기"
-                          : isNearLake(pos) && !driving
-                            ? "잠수하기"
-                            : nearDrawing
-                              ? "별자리 그리기"
-                              : friend
-                                ? `${friend.friend} · 이야기`
-                                : nearby
-                                  ? `${nearby.name} · 시작`
-                                  : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
-                                    ? "보리 돌보기"
-                                    : "놀이 · 대화"}
+                {region === "mansion" || submarine || atOriginalHouse || pos.x > 5700
+                  ? actionLifeLabel()
+                  : diving
+                    ? "물 밖으로 나오기"
+                    : call && callPhase === "dispatched" && nearTarget
+                      ? call.kind === "fire"
+                        ? "물 뿌리기"
+                        : call.kind === "police"
+                          ? "도둑 잡기"
+                          : "사람 돕기"
+                      : isNearCamp(pos) && !driving
+                        ? "캠핑하기"
+                        : isNearLake(pos) && !driving
+                          ? "잠수하기"
+                          : nearDrawing
+                            ? "별자리 그리기"
+                            : friend
+                              ? `${friend.friend} · 이야기`
+                              : nearby
+                                ? `${nearby.name} · 시작`
+                                : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
+                                  ? "보리 돌보기"
+                                  : "놀이 · 대화"}
               </button>
             </div>
           </div>

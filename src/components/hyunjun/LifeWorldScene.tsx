@@ -15,6 +15,7 @@ export function LifeWorldScene({
   holding,
   submarine,
   explored,
+  houseTier,
 }: {
   region: Exclude<LifeRegion, "village">;
   player: Point;
@@ -22,6 +23,7 @@ export function LifeWorldScene({
   holding: FoodId | null;
   submarine: boolean;
   explored: string[];
+  houseTier: number;
 }) {
   const dim = LIFE_MAPS[region];
   return (
@@ -232,6 +234,43 @@ export function LifeWorldScene({
           </text>
           <text x="1850" y="430" fontSize="120">
             📚
+          </text>
+          {houseTier < 2 && (
+            <g>
+              <rect
+                x="1190"
+                y="185"
+                width="830"
+                height="480"
+                rx="28"
+                fill="#e2d9d3"
+                opacity=".94"
+              />
+              <text x="1590" y="440" fontSize="46" textAnchor="middle" fill="#866f76">
+                2단계 증축 후 놀이방 열림
+              </text>
+            </g>
+          )}
+          {houseTier < 3 && (
+            <g>
+              <rect x="130" y="865" width="760" height="410" rx="28" fill="#e4e1d9" opacity=".94" />
+              <text x="510" y="1090" fontSize="46" textAnchor="middle" fill="#7e786d">
+                3단계 증축 후 침실 열림
+              </text>
+            </g>
+          )}
+          {houseTier === 4 && (
+            <g>
+              <text x="1050" y="137" fontSize="74" textAnchor="middle">
+                👑 🏰 👑
+              </text>
+              <text x="1450" y="1230" fontSize="55" fill="#b68c52">
+                왕실 대저택 완성!
+              </text>
+            </g>
+          )}
+          <text x="230" y="155" fontSize="48" fill="#846d72">
+            현준이 집 Lv.{houseTier}/4
           </text>
           <text x="255" y="1200" fontSize="62">
             🚪
