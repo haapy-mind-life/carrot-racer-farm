@@ -79,7 +79,7 @@ export function newMini(kind: MiniKind): Mini {
     feedback:
       kind === "fishing"
         ? "찌가 초록색 가운데에 오면 낚기 버튼을 톡!"
-        : "아래 방향 버튼을 꾹 눌러 움직여 봐!",
+        : "왼쪽 조이스틱을 밀어 움직여 봐!",
   };
 }
 export function stepMini(g: Mini, d: Point, delta: number) {

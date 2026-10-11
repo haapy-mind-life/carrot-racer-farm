@@ -15,7 +15,7 @@ import { Mascot } from "./Art";
 import { Shell } from "./Shell";
 import { MiniGame } from "./MiniGame";
 import { useMovement } from "./useMovement";
-import { MovePad } from "./MovePad";
+import { Joystick } from "./Joystick";
 import { VILLAGES } from "@/game/villages";
 import { Constellation } from "./Constellation";
 import "./adventure.css";
@@ -109,9 +109,13 @@ export function Village() {
     } else if (Math.hypot(pos.x - 1420, pos.y - 1030) < 100) {
       dispatch({ type: "feed-animal", id: "bori" });
       setMessage("보리: 멍멍! 같이 놀아줘서 고마워!");
+    } else {
+      setMessage(
+        "왼쪽 조이스틱을 밀어 친구나 놀이 입구로 가 봐! 오른쪽 지도 버튼으로 마을 여행도 할 수 있어.",
+      );
     }
   };
-  const movement = useMovement(ready && !mini && !drawing && !mapOpen, interact);
+  const movement = useMovement(!mini && !drawing && !mapOpen, interact);
   const direction = useRef(movement.direction);
   direction.current = movement.direction;
   useEffect(() => {
@@ -149,7 +153,7 @@ export function Village() {
     <Shell
       active="home"
       title="현준이의 둥근 마을 여행"
-      subtitle="열 개 마을을 한 바퀴! 손가락으로 꾹 눌러 출발해요."
+      subtitle="열 개 마을을 한 바퀴! 왼쪽 조이스틱을 밀어 출발해요."
     >
       <div className="adv-toolbar">
         <span>✦ 오늘의 모험은 네 마음대로</span>
@@ -160,7 +164,7 @@ export function Village() {
       <div
         className="adv-viewport"
         ref={viewport}
-        aria-label="화면 아래 방향 버튼으로 이동하는 열 개 마을"
+        aria-label="왼쪽 조이스틱으로 이동하는 열 개 마을"
         tabIndex={0}
       >
         <div
@@ -390,7 +394,7 @@ export function Village() {
               style={{ left: v.x, top: v.y }}
               onClick={() =>
                 setMessage(
-                  `${v.friend}: ${Math.hypot(v.x - pos.x, v.y - pos.y) < 105 ? v.words : "가까이 와서 이야기하자! 아래 방향 버튼을 꾹 눌러 봐."}`,
+                  `${v.friend}: ${Math.hypot(v.x - pos.x, v.y - pos.y) < 105 ? v.words : "가까이 와서 이야기하자! 왼쪽 조이스틱을 밀어 봐."}`,
                 )
               }
               aria-label={`${v.friend} · 이야기`}
@@ -489,31 +493,32 @@ export function Village() {
             </button>
           </div>
         )}
-        <div className="adv-bottom">
-          <MovePad hold={movement.hold} />
-          <button
-            className="adv-interact"
-            onClick={interact}
-            disabled={
-              !ready ||
-              (!nearby && !friend && !nearDrawing && Math.hypot(pos.x - 1420, pos.y - 1030) >= 100)
-            }
-          >
-            {nearDrawing
-              ? "별자리 그리기"
-              : friend
-                ? `${friend.friend} · 이야기`
-                : nearby
-                  ? `${nearby.name} · 시작`
-                  : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
-                    ? "보리 돌보기"
-                    : "친구나 입구로 걸어가 봐"}
-          </button>
-        </div>
+        {!mini && !drawing && !mapOpen && (
+          <div className="adv-bottom adv-console">
+            <p className="adv-touch-hint">{message}</p>
+            <Joystick onMove={movement.setStick} />
+            <div className="adv-action-buttons">
+              <button className="adv-map-button" onClick={() => setMapOpen(true)}>
+                지도
+              </button>
+              <button className="adv-interact" onClick={interact} disabled={!ready}>
+                {nearDrawing
+                  ? "별자리 그리기"
+                  : friend
+                    ? `${friend.friend} · 이야기`
+                    : nearby
+                      ? `${nearby.name} · 시작`
+                      : Math.hypot(pos.x - 1420, pos.y - 1030) < 100
+                        ? "보리 돌보기"
+                        : "놀이 · 대화"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <div className="adv-footer">
         <p role="status">{message}</p>
-        <span>화면 방향키 꾹 누르기 · 손가락 / 펜 모두 가능 · 키보드도 사용 가능</span>
+        <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
       {drawing && (
         <Constellation
