@@ -25,7 +25,7 @@ import {
   LIFE_REGION_LABELS,
   nearSpot,
   nearbyTreasure,
-  nextFoodOrder,
+  nextFoodOrder, freshFoodOrderId,
   stepLifePlayer,
   type LifeRegion,
   type FoodId,
@@ -126,10 +126,9 @@ export function Village() {
   const [robotFollowing, setRobotFollowing] = useState(false);
   const [submarine, setSubmarine] = useState(false);
   const [orderIndex, setOrderIndex] = useState(0);
-  const [order, setOrder] = useState<FoodOrder>(nextFoodOrder(0, "food-order-1"));
+  const [order, setOrder] = useState<FoodOrder>(() => nextFoodOrder(0, freshFoodOrderId()));
   const [truckOpen, setTruckOpen] = useState(false);
   const saleBusy = useRef(false);
-  const activePos = region === "village" ? pos : lifePos;
   const nearLife = (target: Point, radius = 180) => nearSpot(lifePos, target, radius);
   const travelTo = (next: Exclude<LifeRegion, "village">, point: Point) => {
     setRegion(next);
@@ -162,7 +161,7 @@ export function Village() {
     setHolding(null);
     const next = orderIndex + 1;
     setOrderIndex(next);
-    setOrder(nextFoodOrder(next, "food-order-" + (next + 1)));
+    setOrder(nextFoodOrder(next, freshFoodOrderId()));
     setMessage("음식을 손님에게 전달했어! 별코인을 벌었어!");
     window.setTimeout(() => {
       saleBusy.current = false;
