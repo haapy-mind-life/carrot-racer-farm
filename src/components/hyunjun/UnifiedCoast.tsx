@@ -2,11 +2,13 @@ import { COAST, HOUSE_TIERS, OCEAN, OCEAN_DISCOVERIES } from "@/game/unified-wor
 export function UnifiedCoast({
   houseTier,
   submarine,
+  submerged,
   discovered,
   robotFollowing,
 }: {
   houseTier: number;
   submarine: boolean;
+  submerged: boolean;
   discovered: string[];
   robotFollowing: boolean;
 }) {
@@ -45,6 +47,7 @@ export function UnifiedCoast({
         height="1800"
         fill="url(#unified-sea)"
       />
+      {submerged && <rect x={OCEAN.start} width={10200-OCEAN.start} height="1800" fill="#0b4d88" opacity=".48" />}
       {Array.from({ length: 34 }, (_, i) => (
         <path
           key={i}
@@ -135,6 +138,15 @@ export function UnifiedCoast({
           잠수함 항구
         </text>
       </g>
+      {submerged && <g>
+        {Array.from({length:42},(_,i)=><circle key={i} cx={7530+(i*187)%2590} cy={160+(i*311)%1490} r={9+(i%4)*5} fill="none" stroke="#eeffffba" strokeWidth="4" />)}
+        <text x="8130" y="355" fontSize="120">🐠 🐟 🐡</text>
+        <text x="9040" y="1330" fontSize="145">🐙 🐢 🪸</text>
+      </g>}
+      {!submerged && <g>
+        <text x="8250" y="270" fontSize="54" fill="#eaffff">🌊 넓은 바다 · 잠수함으로 탐험해 봐!</text>
+        <text x="8720" y="490" fontSize="100">🐬 🐳</text>
+      </g>}
       {OCEAN_DISCOVERIES.map((d) => (
         <g key={d.id} transform={`translate(${d.x} ${d.y})`}>
           <ellipse
@@ -179,6 +191,7 @@ export function UnifiedCoast({
       <text x="6370" y="1670" fontSize="34" fill="#5e7767">
         🏡 우리 집은 서쪽 마을에 있어요. 별코인으로 증축!
       </text>
+      <text x="6080" y="340" fontSize="29" fill="#5d795d">우리 집 확장 Lv.{houseTier}/4</text>
       {submarine && (
         <text x="8060" y="150" fontSize="40" fill="white">
           잠수함 탐험 중
