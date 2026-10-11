@@ -32,3 +32,20 @@ test("house upgrades have stable monotone progression", () => {
   );
   assert.ok(nearWorld(COAST.truck, COAST.truck));
 });
+import { AIRPORT, RUNWAY, canLandPlane, onRunway, stepPlane } from "./unified-world.ts";
+test("airplane: runway is on land and plane flies over the whole map", () => {
+  assert.ok(onRunway(AIRPORT));
+  assert.ok(RUNWAY.x2 < OCEAN.start - 300);
+  let p = { x: AIRPORT.x, y: AIRPORT.y };
+  for (let i = 0; i < 400; i++) p = stepPlane(p, { x: 1, y: 0 }, 0.05);
+  assert.ok(p.x > OCEAN.start + 500 && p.x <= MAP.width - 40);
+  for (let i = 0; i < 800; i++) p = stepPlane(p, { x: -1, y: -1 }, 0.05);
+  assert.deepEqual(p, { x: 40, y: 40 });
+});
+test("airplane: lands only on land or runway, never on the sea", () => {
+  assert.ok(canLandPlane(AIRPORT));
+  assert.ok(canLandPlane({ x: 3000, y: 1600 }));
+  assert.ok(!canLandPlane({ x: OCEAN.start + 100, y: 900 }));
+  assert.ok(!canLandPlane({ x: 9000, y: 900 }));
+  assert.ok(!canLandPlane({ x: 2000, y: 800 }));
+});
