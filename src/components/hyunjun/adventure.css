@@ -1168,3 +1168,50 @@
 .hj-decor-panel button:disabled {
   opacity: 0.5;
 }
+
+.adv-interior {
+  background: #efdee2;
+}
+.adv-interior .hj-decor-panel {
+  position: fixed;
+  left: max(16px, calc((100vw - 980px) / 2 + 12px));
+  bottom: 220px;
+  max-height: min(35dvh, 300px);
+}
+.adv-interior .hj-life-hud {
+  max-width: 250px;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+.adv-interior .hj-life-hud small,
+.adv-interior .hj-life-hud > span:not(:last-child) {
+  display: none;
+}
+.adv-interior .hj-life-hud button {
+  min-height: 44px;
+}
+@media (max-width: 600px) {
+  .adv-interior .hj-life-hud {
+    top: 8px;
+    right: 8px;
+    max-width: 160px;
+    font-size: 11px;
+    gap: 2px;
+  }
+  .adv-interior .hj-life-hud > b,
+  .adv-interior .hj-life-hud > span {
+    display: none;
+  }
+  .adv-interior .hj-decor-panel {
+    bottom: 220px;
+    max-height: 35dvh;
+    font-size: 12px;
+  }
+}
+
+.hj-decor-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

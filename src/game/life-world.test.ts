@@ -1,7 +1,9 @@
+import { candySpotsForHouse } from "../lib/world-model.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   FOOD_MENU,
+  canWalkHome,
   LIFE_MAPS,
   LIFE_SPOTS,
   SEA_TREASURES,
@@ -49,4 +51,61 @@ test("underwater treasure sites can be discovered individually", () => {
   assert.equal(new Set(SEA_TREASURES.map((site) => site.id)).size, 3);
   for (const site of SEA_TREASURES) assert.equal(nearbyTreasure(site)?.id, site.id);
   assert.equal(nearbyTreasure({ x: 400, y: 970 }), null);
+});
+
+test("home entry is in the hallway, away from locked rooms and the exit trigger", () => {
+  assert.ok(LIFE_SPOTS.mansionInside.x > 1000 && LIFE_SPOTS.mansionInside.x < 1180);
+  assert.ok(!nearSpot(LIFE_SPOTS.mansionInside, LIFE_SPOTS.mansionExit, 180));
+});
+test("home movement respects exterior walls, room walls and open doorways", () => {
+  const left = stepLifePlayer("mansion", { x: 140, y: 450 }, { x: -1, y: 0 }, 0.05);
+  assert.equal(left.x, 140);
+  const wall = stepLifePlayer("mansion", { x: 400, y: 710 }, { x: 0, y: 1 }, 0.05);
+  assert.equal(wall.y, 710);
+  const door = stepLifePlayer("mansion", { x: 650, y: 710 }, { x: 0, y: 1 }, 0.05);
+  assert.ok(door.y > 710);
+});
+test("upgrades open rooms without trapping the player in the entrance hall", () => {
+  assert.equal(canWalkHome({ x: 1600, y: 450 }, 1), false);
+  assert.equal(canWalkHome({ x: 1600, y: 450 }, 2), true);
+  assert.equal(canWalkHome({ x: 600, y: 1100 }, 2), false);
+  assert.equal(canWalkHome({ x: 600, y: 1100 }, 3), true);
+  for (const tier of [1, 2, 3, 4]) {
+    assert.ok(canWalkHome(LIFE_SPOTS.mansionInside, tier));
+    assert.ok(canWalkHome(LIFE_SPOTS.mansionExit, tier));
+  }
+});
+
+test("every unlocked room, exit and party candy is reachable from the entry", () => {
+  for (const tier of [1, 2, 3, 4]) {
+    const seen = new Set<string>();
+    const queue = [{ x: 1110, y: 850 }];
+    for (let i = 0; i < queue.length; i++) {
+      const p = queue[i]!;
+      for (const d of [
+        { x: 10, y: 0 },
+        { x: -10, y: 0 },
+        { x: 0, y: 10 },
+        { x: 0, y: -10 },
+      ]) {
+        const next = { x: p.x + d.x, y: p.y + d.y };
+        const key = `${next.x},${next.y}`;
+        if (!seen.has(key) && canWalkHome(next, tier)) {
+          seen.add(key);
+          queue.push(next);
+        }
+      }
+    }
+    for (const spot of [
+      LIFE_SPOTS.mansionExit,
+      LIFE_SPOTS.mansionKitchen,
+      LIFE_SPOTS.mansionDining,
+      ...candySpotsForHouse(tier),
+    ]) {
+      assert.ok(
+        queue.some((p) => nearSpot(p, spot, 50)),
+        `tier ${tier}: ${JSON.stringify(spot)}`,
+      );
+    }
+  }
 });
