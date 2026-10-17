@@ -2,12 +2,13 @@ import type { Point } from "@/game/adventure";
 import {
   FOOD_MENU,
   LIFE_MAPS,
+  HOME_WALLS,
   LIFE_SPOTS,
   SEA_TREASURES,
   type LifeRegion,
   type FoodId,
 } from "@/game/life-world";
-import { CANDY_SPOTS, DECOR, type PlacedDecor } from "@/lib/world-model";
+import { CANDY_SPOTS, candySpotsForHouse, DECOR, type PlacedDecor } from "@/lib/world-model";
 
 export function LifeWorldScene({
   region,
@@ -210,30 +211,33 @@ export function LifeWorldScene({
             stroke="#d8b6a4"
             strokeWidth="24"
           />
-          <path d="M90 750H2110M1110 100V1360" stroke="#e8c9b9" strokeWidth="33" />
+          <path d="M1110 150V1300M170 750H2030" stroke="#f5e7c9" strokeWidth="150" />
           <rect x="125" y="190" width="850" height="470" rx="28" fill="#faeacb" />
-          <rect x="1190" y="185" width="830" height="480" rx="28" fill="#f4e5f6" />
-          <rect x="130" y="865" width="760" height="410" rx="34" fill="#e2ecfb" />
+          <rect x="1250" y="185" width="770" height="480" rx="28" fill="#f4e5f6" />
+          <rect x="130" y="865" width="830" height="410" rx="34" fill="#e2ecfb" />
           <rect x="1205" y="865" width="770" height="410" rx="34" fill="#e7f1d9" />
+          {HOME_WALLS.map((wall, i) => (
+            <rect key={i} {...wall} rx="8" fill="#d8b6a4" />
+          ))}
           <text x="500" y="275" fontSize="52" fill="#806a57">
             부엌
           </text>
           <text x="1550" y="270" fontSize="52" fill="#876e8b">
             큰 놀이방
           </text>
-          <text x="470" y="960" fontSize="52" fill="#6d789d">
+          <text x="470" y="940" fontSize="52" fill="#6d789d">
             침실
           </text>
           <text x="1500" y="930" fontSize="52" fill="#628060">
             식당
           </text>
-          <text x="920" y="610" fontSize="120">
+          <text x="920" y="610" fontSize="120" textAnchor="middle">
             🍕
           </text>
-          <text x="1400" y="1070" fontSize="105">
+          <text x="1400" y="1070" fontSize="105" textAnchor="middle">
             🍽️
           </text>
-          <text x="510" y="1120" fontSize="115">
+          <text x="510" y="1100" fontSize="115">
             🛏️
           </text>
           <text x="1550" y="430" fontSize="120">
@@ -245,23 +249,23 @@ export function LifeWorldScene({
           {houseTier < 2 && (
             <g>
               <rect
-                x="1190"
+                x="1250"
                 y="185"
-                width="830"
+                width="770"
                 height="480"
                 rx="28"
                 fill="#e2d9d3"
                 opacity=".94"
               />
-              <text x="1590" y="440" fontSize="46" textAnchor="middle" fill="#866f76">
+              <text x="1590" y="440" fontSize="32" textAnchor="middle" fill="#866f76">
                 2단계 증축 후 놀이방 열림
               </text>
             </g>
           )}
           {houseTier < 3 && (
             <g>
-              <rect x="130" y="865" width="760" height="410" rx="28" fill="#e4e1d9" opacity=".94" />
-              <text x="510" y="1090" fontSize="46" textAnchor="middle" fill="#7e786d">
+              <rect x="130" y="865" width="830" height="410" rx="28" fill="#e4e1d9" opacity=".94" />
+              <text x="510" y="1090" fontSize="32" textAnchor="middle" fill="#7e786d">
                 3단계 증축 후 침실 열림
               </text>
             </g>
@@ -290,11 +294,13 @@ export function LifeWorldScene({
               <text x="1050" y="1335" fontSize="52" textAnchor="middle" fill="#8a4a12">
                 🎃 할로윈 파티! 사탕 {candy.length}/{CANDY_SPOTS.length}
               </text>
-              {CANDY_SPOTS.filter((c) => !candy.includes(c.id)).map((c) => (
-                <text key={c.id} x={c.x} y={c.y} fontSize="90" textAnchor="middle">
-                  🍬
-                </text>
-              ))}
+              {candySpotsForHouse(houseTier)
+                .filter((c) => !candy.includes(c.id))
+                .map((c) => (
+                  <text key={c.id} x={c.x} y={c.y} fontSize="90" textAnchor="middle">
+                    🍬
+                  </text>
+                ))}
             </g>
           )}
           {decor.map((d, i) => (
@@ -305,10 +311,16 @@ export function LifeWorldScene({
           <text x="230" y="155" fontSize="48" fill="#846d72">
             현준이 집 Lv.{houseTier}/4
           </text>
-          <text x="255" y="1200" fontSize="62">
+          <text x={LIFE_SPOTS.mansionExit.x} y="1320" fontSize="62" textAnchor="middle">
             🚪
           </text>
-          <text x="290" y="1275" fontSize="33" fill="#6c685b">
+          <text
+            x={LIFE_SPOTS.mansionExit.x}
+            y="1348"
+            fontSize="33"
+            textAnchor="middle"
+            fill="#6c685b"
+          >
             마당으로 나가기
           </text>
         </>

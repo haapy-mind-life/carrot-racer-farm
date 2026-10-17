@@ -12,8 +12,8 @@ export const LIFE_SPOTS = {
   coastArrival: { x: 460, y: 1000 },
   coastExit: { x: 150, y: 1000 },
   mansionDoor: { x: 1210, y: 1080 },
-  mansionInside: { x: 650, y: 1080 },
-  mansionExit: { x: 210, y: 1100 },
+  mansionInside: { x: 1110, y: 850 },
+  mansionExit: { x: 1110, y: 1300 },
   mansionKitchen: { x: 920, y: 560 },
   mansionDining: { x: 1390, y: 970 },
   robot: { x: 1490, y: 1250 },
@@ -23,6 +23,29 @@ export const LIFE_SPOTS = {
   seaStart: { x: 700, y: 970 },
   seaReturn: { x: 240, y: 970 },
 } as const;
+
+// Shared by drawing and movement so the visible doors are also walkable.
+export const HOME_WALLS = [
+  { x: 90, y: 738, width: 460, height: 24 },
+  { x: 750, y: 738, width: 260, height: 24 },
+  { x: 1210, y: 738, width: 340, height: 24 },
+  { x: 1750, y: 738, width: 360, height: 24 },
+  ...[1010, 1210].flatMap((x) => [
+    { x, y: 100, width: 24, height: 250 },
+    { x, y: 550, width: 24, height: 188 },
+    { x, y: 762, width: 24, height: 218 },
+    { x, y: 1180, width: 24, height: 180 },
+  ]),
+];
+export function canWalkHome(p: Point, houseTier = 4) {
+  if (p.x < 140 || p.x > 2060 || p.y < 240 || p.y > 1300) return false;
+  if (houseTier < 2 && p.x > 1240 && p.y < 710) return false;
+  if (houseTier < 3 && p.x < 980 && p.y > 790) return false;
+  return !HOME_WALLS.some(
+    (w) =>
+      p.x > w.x - 28 && p.x < w.x + w.width + 28 && p.y > w.y - 28 && p.y < w.y + w.height + 28,
+  );
+}
 
 export const SEA_TREASURES = [
   { id: "pearl-coral", name: "진주 산호 정원", x: 1220, y: 550, reward: 20 },
@@ -76,6 +99,7 @@ export function stepLifePlayer(
   position: Point,
   direction: Point,
   dt: number,
+  houseTier = 4,
 ): Point {
   const size = LIFE_MAPS[region];
   const length = Math.max(1, Math.hypot(direction.x, direction.y));
@@ -83,6 +107,11 @@ export function stepLifePlayer(
   const speed = region === "deep-sea" ? 320 : 245;
   const nextX = position.x + (direction.x * speed * time) / length;
   const nextY = position.y + (direction.y * speed * time) / length;
+  if (region === "mansion") {
+    const x = canWalkHome({ x: nextX, y: position.y }, houseTier) ? nextX : position.x;
+    const y = canWalkHome({ x, y: nextY }, houseTier) ? nextY : position.y;
+    return { x, y };
+  }
   const maxX = region === "coast" ? 3300 : size.width - 45;
   return {
     x: Math.min(maxX, Math.max(45, nextX)),

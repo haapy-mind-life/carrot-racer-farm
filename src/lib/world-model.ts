@@ -101,6 +101,14 @@ export const CANDY_SPOTS = [
   { id: "candy-bed", x: 260, y: 1210 },
   { id: "candy-hall", x: 1110, y: 760 },
 ] as const;
+// Keep every party collectible reachable before rooms are expanded.
+export function candySpotsForHouse(tier: number) {
+  return CANDY_SPOTS.map((spot) => {
+    if (spot.id === "candy-play" && tier < 2) return { ...spot, x: 1110, y: 450 };
+    if (spot.id === "candy-bed" && tier < 3) return { ...spot, x: 1110, y: 1120 };
+    return spot;
+  });
+}
 export const CANDY_REWARD = 5;
 export const PARTY_BONUS = 50;
 export const PARTY_DECOR_NEEDED = 3;

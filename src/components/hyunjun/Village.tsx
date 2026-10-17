@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   CANDY_SPOTS,
+  candySpotsForHouse,
   DECOR,
   DECOR_LIMIT,
   PARTY_DECOR_NEEDED,
@@ -207,12 +208,12 @@ export function Village() {
   };
   const actionLife = () => {
     if (region === "mansion") {
-      if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) {
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 180)) {
         backToWorld();
         return;
       }
       const candy = state.halloween.active
-        ? CANDY_SPOTS.find(
+        ? candySpotsForHouse(state.houseTier).find(
             (c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170),
           )
         : undefined;
@@ -315,10 +316,12 @@ export function Village() {
   };
   const actionLifeLabel = () => {
     if (region === "mansion") {
-      if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) return "집 밖으로";
+      if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 180)) return "집 밖으로";
       if (
         state.halloween.active &&
-        CANDY_SPOTS.some((c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170))
+        candySpotsForHouse(state.houseTier).some(
+          (c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170),
+        )
       )
         return "사탕 줍기";
       if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) return "음식 집기";
@@ -492,7 +495,7 @@ export function Village() {
     }
   };
   const offLand = useRef(false);
-  offLand.current = submarine || plane !== "off";
+  offLand.current = submarine || plane !== "off" || region === "mansion";
   useEffect(() => {
     // Incidents appear in the same world without requiring a separate mini-game.
     // They wait until the player is back on land, never interrupting a dive or a flight.
@@ -534,7 +537,8 @@ export function Village() {
       setWalking(moving);
       if (d.x) setFacing(d.x > 0 ? 1 : -1);
       const dt = last ? (now - last) / 1000 : 0;
-      if (moving && region === "mansion") setLifePos((p) => stepLifePlayer("mansion", p, d, dt));
+      if (moving && region === "mansion")
+        setLifePos((p) => stepLifePlayer("mansion", p, d, dt, state.houseTier));
       if (moving && region === "village")
         setPos((p) => {
           const next = submarine
@@ -559,13 +563,38 @@ export function Village() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mini, drawing, mapOpen, garageOpen, truckOpen, diving, driving, region, submarine, plane]);
+  }, [
+    mini,
+    drawing,
+    mapOpen,
+    garageOpen,
+    truckOpen,
+    diving,
+    driving,
+    region,
+    submarine,
+    plane,
+    state.houseTier,
+  ]);
+  const sceneScale = region === "mansion" ? Math.min(0.6, Math.max(0.32, size.w / 2200)) : 1;
   const camera =
     region === "village"
       ? cameraAt(pos, size.w, size.h)
       : {
-          x: Math.max(0, Math.min(LIFE_MAPS[region].width - size.w, lifePos.x - size.w / 2)),
-          y: Math.max(0, Math.min(LIFE_MAPS[region].height - size.h, lifePos.y - size.h / 2)),
+          x: Math.max(
+            0,
+            Math.min(
+              LIFE_MAPS[region].width - size.w / sceneScale,
+              lifePos.x - size.w / sceneScale / 2,
+            ),
+          ),
+          y: Math.max(
+            0,
+            Math.min(
+              LIFE_MAPS[region].height - size.h / sceneScale,
+              lifePos.y - size.h / sceneScale / 2,
+            ),
+          ),
         };
   return (
     <Shell
@@ -605,9 +634,13 @@ export function Village() {
         </button>
       </div>
       <div
-        className="adv-viewport"
+        className={`adv-viewport${region === "mansion" ? " adv-interior" : ""}`}
         ref={viewport}
-        aria-label="왼쪽 조이스틱으로 이동하는 열 개 마을"
+        aria-label={
+          region === "mansion"
+            ? "직접 걸어 다니는 우리 집 실내"
+            : "왼쪽 조이스틱으로 이동하는 열 개 마을"
+        }
         tabIndex={0}
       >
         <div
@@ -615,7 +648,8 @@ export function Village() {
           style={{
             width: region === "village" ? MAP.width : LIFE_MAPS[region].width,
             height: region === "village" ? MAP.height : LIFE_MAPS[region].height,
-            transform: `translate(${-camera.x}px,${-camera.y}px)`,
+            transform: `translate(${-camera.x * sceneScale}px,${-camera.y * sceneScale}px) scale(${sceneScale})`,
+            transformOrigin: "0 0",
           }}
         >
           {region === "village" ? (
@@ -1113,7 +1147,7 @@ export function Village() {
         {region !== "village" && (
           <div className="hj-life-hud">
             <b>{LIFE_REGION_LABELS[region]}</b>
-            <small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small>
+            <small>부엌에서 음식 집기 · 식탁에서 먹기</small>
             <span>💰 {state.money} 별코인</span>
             {region === "mansion" && (
               <>
@@ -1130,9 +1164,14 @@ export function Village() {
         )}
         {region === "mansion" && decorOpen && (
           <div className="hj-decor-panel" role="group" aria-label="집 안 꾸미기">
-            <b>
-              지금 서 있는 곳에 놓기 ({state.decor.length}/{DECOR_LIMIT})
-            </b>
+            <header>
+              <b>
+                지금 서 있는 곳에 놓기 ({state.decor.length}/{DECOR_LIMIT})
+              </b>
+              <button onClick={() => setDecorOpen(false)} aria-label="집 꾸미기 닫기">
+                닫기
+              </button>
+            </header>
             <div>
               {DECOR.map((d) => (
                 <button
@@ -1340,7 +1379,7 @@ export function Village() {
                       : backToWorld()
                 }
               >
-                {region === "village" ? "지도" : region === "coast" ? "큰 집" : "해변"}
+                {region === "village" ? "지도" : region === "coast" ? "큰 집" : "집 밖으로"}
               </button>
               <button className="adv-interact" onClick={interact} disabled={!ready}>
                 {region === "mansion" ||
