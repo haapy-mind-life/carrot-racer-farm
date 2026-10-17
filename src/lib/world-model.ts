@@ -71,6 +71,42 @@ export const FURNITURE = [
   { id: "window", name: "무지개 창문", cost: 35 },
 ] as const;
 export type FurnitureId = (typeof FURNITURE)[number]["id"];
+export const DECOR = [
+  { id: "pumpkin", name: "호박 등불", emoji: "🎃", cost: 10, halloween: true },
+  { id: "ghost", name: "귀여운 유령", emoji: "👻", cost: 15, halloween: true },
+  { id: "bat", name: "박쥐 장식", emoji: "🦇", cost: 10, halloween: true },
+  { id: "candle", name: "도깨비 촛불", emoji: "🕯️", cost: 8, halloween: true },
+  { id: "web", name: "반짝 거미줄", emoji: "🕸️", cost: 8, halloween: true },
+  { id: "cauldron", name: "마법 솥", emoji: "🍲", cost: 20, halloween: true },
+  { id: "balloon", name: "파티 풍선", emoji: "🎈", cost: 6, halloween: false },
+  { id: "flower", name: "꽃병", emoji: "🌷", cost: 8, halloween: false },
+  { id: "sofa", name: "푹신 소파", emoji: "🛋️", cost: 25, halloween: false },
+  { id: "tree", name: "작은 나무", emoji: "🪴", cost: 12, halloween: false },
+] as const;
+export type DecorId = (typeof DECOR)[number]["id"];
+export type PlacedDecor = { id: DecorId; x: number; y: number };
+export const DECOR_LIMIT = 24;
+export const DECOR_AREA = { minX: 140, maxX: 2060, minY: 220, maxY: 1320 } as const;
+export const YARD = [
+  { id: "porch-pumpkin", name: "현관 호박", emoji: "🎃", cost: 10 },
+  { id: "lights", name: "반짝 전구", emoji: "✨", cost: 12 },
+  { id: "banner", name: "할로윈 깃발", emoji: "🎃🦇", cost: 12 },
+  { id: "ghost-gate", name: "대문 유령", emoji: "👻", cost: 10 },
+] as const;
+export type YardId = (typeof YARD)[number]["id"];
+export const CANDY_SPOTS = [
+  { id: "candy-kitchen", x: 330, y: 540 },
+  { id: "candy-play", x: 1960, y: 590 },
+  { id: "candy-dining", x: 1820, y: 1230 },
+  { id: "candy-bed", x: 260, y: 1210 },
+  { id: "candy-hall", x: 1110, y: 760 },
+] as const;
+export const CANDY_REWARD = 5;
+export const PARTY_BONUS = 50;
+export const PARTY_DECOR_NEEDED = 3;
+export type Halloween = { active: boolean; candy: string[]; completed: boolean };
+export const halloweenDecorCount = (decor: PlacedDecor[]) =>
+  decor.filter((d) => DECOR.find((x) => x.id === d.id)?.halloween).length;
 export type Plot = { crop: CropId | null; water: number; gold: boolean };
 export type GameState = {
   version: 2;
@@ -93,6 +129,9 @@ export type GameState = {
   settledFoodSales: string[];
   visitedSeaTreasures: string[];
   houseTier: number;
+  decor: PlacedDecor[];
+  yard: YardId[];
+  halloween: Halloween;
 };
 export const PLOT_COUNT = 6;
 export const TICKET_PRICE = 50000;
@@ -107,6 +146,8 @@ const finite = (v: unknown, fallback = 0, max = 1e12) =>
     : fallback;
 const object = (v: unknown): Record<string, unknown> =>
   v !== null && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+const clampDecor = (v: unknown, lo: number, hi: number) =>
+  typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : lo;
 const emptyPlot = (): Plot => ({ crop: null, water: 0, gold: false });
 export function migrateSave(input: unknown): GameState {
   const raw = object(input),
@@ -150,6 +191,29 @@ export function migrateSave(input: unknown): GameState {
           .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length < 120)
           .slice(-30)
       : [],
+    decor: Array.isArray(raw["decor"])
+      ? raw["decor"]
+          .map((d) => object(d))
+          .filter((d) => DECOR.some((x) => x.id === d["id"]) && typeof d["x"] === "number")
+          .slice(0, DECOR_LIMIT)
+          .map((d) => ({
+            id: d["id"] as DecorId,
+            x: clampDecor(d["x"], DECOR_AREA.minX, DECOR_AREA.maxX),
+            y: clampDecor(d["y"], DECOR_AREA.minY, DECOR_AREA.maxY),
+          }))
+      : [],
+    yard: Array.isArray(raw["yard"])
+      ? YARD.map((y) => y.id).filter((id) => (raw["yard"] as unknown[]).includes(id))
+      : [],
+    halloween: {
+      active: object(raw["halloween"])["active"] === true,
+      candy: Array.isArray(object(raw["halloween"])["candy"])
+        ? CANDY_SPOTS.map((c) => c.id as string).filter((id) =>
+            (object(raw["halloween"])["candy"] as unknown[]).includes(id),
+          )
+        : [],
+      completed: object(raw["halloween"])["completed"] === true,
+    },
     houseTier: [1, 2, 3, 4].includes(raw["houseTier"] as number) ? (raw["houseTier"] as number) : 1,
     version: 2,
     money: finite(raw["money"], 50),
@@ -208,6 +272,11 @@ export type WorldAction =
   | { type: "feed-animal"; id: AnimalId }
   | { type: "sell-food"; id: string; foodId: string }
   | { type: "explore-sea"; id: string }
+  | { type: "place-decor"; id: DecorId; x: number; y: number }
+  | { type: "remove-decor"; index: number }
+  | { type: "toggle-yard"; id: YardId }
+  | { type: "start-party" }
+  | { type: "collect-candy"; id: string }
   | { type: "upgrade-house" };
 export function reduceWorld(state: GameState, action: WorldAction): GameState {
   if (action.type === "upgrade-house") {
@@ -370,6 +439,65 @@ export function reduceWorld(state: GameState, action: WorldAction): GameState {
     const room = state.room.map((id) => (action.id !== null && id === action.id ? null : id));
     room[action.slot] = action.id;
     return { ...state, room };
+  }
+  if (action.type === "place-decor") {
+    const item = DECOR.find((d) => d.id === action.id);
+    if (
+      !item ||
+      !Number.isFinite(action.x) ||
+      !Number.isFinite(action.y) ||
+      state.decor.length >= DECOR_LIMIT ||
+      state.money < item.cost
+    )
+      return state;
+    return {
+      ...state,
+      money: state.money - item.cost,
+      decor: [
+        ...state.decor,
+        {
+          id: item.id,
+          x: clampDecor(action.x, DECOR_AREA.minX, DECOR_AREA.maxX),
+          y: clampDecor(action.y, DECOR_AREA.minY, DECOR_AREA.maxY),
+        },
+      ],
+    };
+  }
+  if (action.type === "remove-decor") {
+    const placed = state.decor[action.index];
+    if (!placed || !Number.isInteger(action.index)) return state;
+    const refund = Math.floor(DECOR.find((d) => d.id === placed.id)!.cost / 2);
+    return {
+      ...state,
+      money: state.money + refund,
+      decor: state.decor.filter((_, i) => i !== action.index),
+    };
+  }
+  if (action.type === "toggle-yard") {
+    const item = YARD.find((y) => y.id === action.id);
+    if (!item) return state;
+    if (state.yard.includes(item.id))
+      return { ...state, yard: state.yard.filter((id) => id !== item.id) };
+    if (state.money < item.cost) return state;
+    return { ...state, money: state.money - item.cost, yard: [...state.yard, item.id] };
+  }
+  if (action.type === "start-party") {
+    if (state.halloween.active || halloweenDecorCount(state.decor) < PARTY_DECOR_NEEDED)
+      return state;
+    return { ...state, halloween: { ...state.halloween, active: true, candy: [] } };
+  }
+  if (action.type === "collect-candy") {
+    const h = state.halloween;
+    if (!h.active || !CANDY_SPOTS.some((c) => c.id === action.id) || h.candy.includes(action.id))
+      return state;
+    const candy = [...h.candy, action.id];
+    const done = candy.length >= CANDY_SPOTS.length;
+    const bonus = done && !h.completed ? PARTY_BONUS : 0;
+    return {
+      ...state,
+      money: state.money + CANDY_REWARD + bonus,
+      halloween: { active: !done, candy: done ? [] : candy, completed: h.completed || done },
+    };
   }
   if (action.type === "outfit") return { ...state, outfit: action.outfit };
   if (action.type === "wallpaper") return { ...state, wallpaper: action.wallpaper };

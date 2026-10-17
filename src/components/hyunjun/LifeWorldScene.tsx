@@ -7,6 +7,7 @@ import {
   type LifeRegion,
   type FoodId,
 } from "@/game/life-world";
+import { CANDY_SPOTS, DECOR, type PlacedDecor } from "@/lib/world-model";
 
 export function LifeWorldScene({
   region,
@@ -16,6 +17,9 @@ export function LifeWorldScene({
   submarine,
   explored,
   houseTier,
+  decor,
+  candy,
+  partyActive,
 }: {
   region: Exclude<LifeRegion, "village">;
   player: Point;
@@ -24,6 +28,9 @@ export function LifeWorldScene({
   submarine: boolean;
   explored: string[];
   houseTier: number;
+  decor: PlacedDecor[];
+  candy: string[];
+  partyActive: boolean;
 }) {
   const dim = LIFE_MAPS[region];
   return (
@@ -269,6 +276,32 @@ export function LifeWorldScene({
               </text>
             </g>
           )}
+          {partyActive && (
+            <g>
+              <rect
+                x="90"
+                y="100"
+                width="2020"
+                height="1260"
+                rx="80"
+                fill="#5b2a8a"
+                opacity=".22"
+              />
+              <text x="1050" y="1335" fontSize="52" textAnchor="middle" fill="#8a4a12">
+                🎃 할로윈 파티! 사탕 {candy.length}/{CANDY_SPOTS.length}
+              </text>
+              {CANDY_SPOTS.filter((c) => !candy.includes(c.id)).map((c) => (
+                <text key={c.id} x={c.x} y={c.y} fontSize="90" textAnchor="middle">
+                  🍬
+                </text>
+              ))}
+            </g>
+          )}
+          {decor.map((d, i) => (
+            <text key={i} x={d.x} y={d.y} fontSize="96" textAnchor="middle">
+              {DECOR.find((x) => x.id === d.id)?.emoji}
+            </text>
+          ))}
           <text x="230" y="155" fontSize="48" fill="#846d72">
             현준이 집 Lv.{houseTier}/4
           </text>

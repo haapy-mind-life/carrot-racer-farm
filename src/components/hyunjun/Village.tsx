@@ -1,6 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useGame } from "@/lib/game-state";
+import {
+  CANDY_SPOTS,
+  DECOR,
+  DECOR_LIMIT,
+  PARTY_DECOR_NEEDED,
+  YARD,
+  halloweenDecorCount,
+  useGame,
+} from "@/lib/game-state";
 import {
   MAP,
   SPAWN,
@@ -18,13 +26,14 @@ import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
 import { LifeWorldScene } from "./LifeWorldScene";
-import { UnifiedCoast, GrowingHome, PlaneArt } from "./UnifiedCoast";
+import { UnifiedCoast, GrowingHome, PlaneArt, YardDecor } from "./UnifiedCoast";
 import {
   COAST,
   OCEAN,
   HOUSE_TIERS,
   OCEAN_DISCOVERIES,
   AIRPORT,
+  RUNWAY,
   canLandPlane,
   nearWorld,
   onRunway,
@@ -123,6 +132,8 @@ function Cottage({ x, y, color, label }: { x: number; y: number; color: string; 
     </g>
   );
 }
+const mapX = (x: number) => 10 + (x / MAP.width) * 320;
+const mapY = (y: number) => 14 + (y / MAP.height) * 132;
 export function Village() {
   const { state, dispatch, ready } = useGame();
   const nav = useNavigate();
@@ -198,6 +209,20 @@ export function Village() {
     if (region === "mansion") {
       if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) {
         backToWorld();
+        return;
+      }
+      const candy = state.halloween.active
+        ? CANDY_SPOTS.find(
+            (c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170),
+          )
+        : undefined;
+      if (candy) {
+        dispatch({ type: "collect-candy", id: candy.id });
+        setMessage(
+          state.halloween.candy.length + 1 >= CANDY_SPOTS.length
+            ? "사탕을 모두 모았어! 할로윈 파티 대성공! 🎃"
+            : "사탕 발견! 🍬 " + (state.halloween.candy.length + 1) + "/" + CANDY_SPOTS.length,
+        );
         return;
       }
       if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) {
@@ -291,6 +316,11 @@ export function Village() {
   const actionLifeLabel = () => {
     if (region === "mansion") {
       if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) return "집 밖으로";
+      if (
+        state.halloween.active &&
+        CANDY_SPOTS.some((c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170))
+      )
+        return "사탕 줍기";
       if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) return "음식 집기";
       if (nearWorld(lifePos, LIFE_SPOTS.mansionDining, 310) && holding) return "음식 먹기";
       return "집 탐험";
@@ -311,6 +341,7 @@ export function Village() {
     return "주변 살펴보기";
   };
   const [garageOpen, setGarageOpen] = useState(false);
+  const [decorOpen, setDecorOpen] = useState(false);
   const [carId, setCarId] = useState(loadCarId);
   const [driving, setDriving] = useState(false);
   const [callIndex, setCallIndex] = useState(-1);
@@ -387,6 +418,7 @@ export function Village() {
     }
   };
   const [facing, setFacing] = useState(1);
+  const consoleShown = !mini && !drawing && !mapOpen && !garageOpen && !truckOpen;
   const viewport = useRef<HTMLDivElement>(null);
   const nearby = nearestPortal(pos);
   const friend = VILLAGES.find((v) => Math.hypot(v.x - pos.x, v.y - pos.y) < 105);
@@ -459,9 +491,14 @@ export function Village() {
       );
     }
   };
+  const offLand = useRef(false);
+  offLand.current = submarine || plane !== "off";
   useEffect(() => {
     // Incidents appear in the same world without requiring a separate mini-game.
-    const timeout = window.setTimeout(() => {
+    // They wait until the player is back on land, never interrupting a dive or a flight.
+    const interval = window.setInterval(() => {
+      if (offLand.current) return;
+      window.clearInterval(interval);
       setCallIndex((current) => {
         if (current < 0) {
           setCallPhase("reported");
@@ -471,7 +508,7 @@ export function Village() {
         return current;
       });
     }, 12000);
-    return () => window.clearTimeout(timeout);
+    return () => window.clearInterval(interval);
   }, []);
   const movement = useMovement(
     !mini && !drawing && !mapOpen && !garageOpen && !truckOpen,
@@ -711,6 +748,7 @@ export function Village() {
                 ))}
                 <g transform="translate(245 155)">
                   <GrowingHome tier={state.houseTier} />
+                  <YardDecor items={state.yard} />
                 </g>
                 <Cottage x={2100} y={1170} color="#92b8a0" label="FARM" />
                 <g transform="translate(2260 300)">
@@ -966,6 +1004,9 @@ export function Village() {
               submarine={submarine}
               explored={state.visitedSeaTreasures}
               houseTier={state.houseTier}
+              decor={state.decor}
+              candy={state.halloween.candy}
+              partyActive={state.halloween.active}
             />
           )}
         </div>
@@ -1075,11 +1116,80 @@ export function Village() {
             <small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small>
             <span>💰 {state.money} 별코인</span>
             {region === "mansion" && (
-              <button onClick={() => void nav({ to: "/house" })}>🪑 기존 우리 집 꾸미기</button>
+              <>
+                <button onClick={() => void nav({ to: "/house" })}>🪑 기존 우리 집 꾸미기</button>
+                <button onClick={() => setDecorOpen((v) => !v)}>
+                  {decorOpen ? "꾸미기 닫기" : "🎨 집 안 꾸미기"}
+                </button>
+              </>
             )}
             {holding && (
               <span>손에 든 음식: {FOOD_MENU.find((food) => food.id === holding)?.name}</span>
             )}
+          </div>
+        )}
+        {region === "mansion" && decorOpen && (
+          <div className="hj-decor-panel" role="group" aria-label="집 안 꾸미기">
+            <b>
+              지금 서 있는 곳에 놓기 ({state.decor.length}/{DECOR_LIMIT})
+            </b>
+            <div>
+              {DECOR.map((d) => (
+                <button
+                  key={d.id}
+                  disabled={!ready || state.money < d.cost || state.decor.length >= DECOR_LIMIT}
+                  onClick={() => {
+                    dispatch({ type: "place-decor", id: d.id, x: lifePos.x, y: lifePos.y + 40 });
+                    setMessage(d.name + "을(를) 놓았어!");
+                  }}
+                >
+                  {d.emoji} {d.name} · {d.cost}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={!state.decor.length}
+              onClick={() => {
+                const near = state.decor
+                  .map((d, i) => ({ i, dist: Math.hypot(d.x - lifePos.x, d.y - lifePos.y - 40) }))
+                  .sort((a, b) => a.dist - b.dist)[0];
+                if (near && near.dist < 260) dispatch({ type: "remove-decor", index: near.i });
+                else setMessage("치울 장식 가까이로 가 봐!");
+              }}
+            >
+              가까운 장식 치우기
+            </button>
+            <b>마당 꾸미기</b>
+            <div>
+              {YARD.map((y) => (
+                <button
+                  key={y.id}
+                  aria-pressed={state.yard.includes(y.id)}
+                  disabled={!ready || (!state.yard.includes(y.id) && state.money < y.cost)}
+                  onClick={() => dispatch({ type: "toggle-yard", id: y.id })}
+                >
+                  {y.emoji} {y.name} · {state.yard.includes(y.id) ? "켜짐" : y.cost}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={
+                !ready ||
+                state.halloween.active ||
+                halloweenDecorCount(state.decor) < PARTY_DECOR_NEEDED
+              }
+              onClick={() => {
+                dispatch({ type: "start-party" });
+                setMessage("할로윈 파티 시작! 집 안 곳곳의 사탕 🍬을 모아 봐!");
+                setDecorOpen(false);
+              }}
+            >
+              {state.halloween.active
+                ? "🎃 파티 중!"
+                : halloweenDecorCount(state.decor) < PARTY_DECOR_NEEDED
+                  ? `🎃 파티: 할로윈 장식 ${PARTY_DECOR_NEEDED}개 필요`
+                  : "🎃 할로윈 파티 열기"}
+            </button>
           </div>
         )}
         <div className="adv-location">
@@ -1094,43 +1204,85 @@ export function Village() {
                   : (district?.name ?? "우리 마을")}
         </div>
         {mapOpen && region === "village" && (
-          <div className="adv-globe" role="dialog" aria-label="둥근 세계 지도">
+          <div className="adv-globe" role="dialog" aria-label="세계 지도">
             <header>
-              <b>우리 세계 한 바퀴</b>
+              <b>우리 세계 지도</b>
               <button onClick={() => setMapOpen(false)}>닫기</button>
             </header>
             <svg viewBox="0 0 340 160" aria-hidden="true">
-              <ellipse cx="170" cy="80" rx="155" ry="72" fill="#badde8" />
-              <ellipse cx="170" cy="80" rx="100" ry="72" fill="none" stroke="#eff9fa" />
-              <ellipse cx="170" cy="80" rx="155" ry="32" fill="none" stroke="#eff9fa" />
+              <rect x="10" y="14" width="320" height="132" rx="14" fill="#d7e7b9" />
+              <rect
+                x={mapX(5600)}
+                y="14"
+                width={mapX(OCEAN.start) - mapX(5600)}
+                height="132"
+                fill="#f2dfa2"
+              />
+              <rect
+                x={mapX(OCEAN.start)}
+                y="14"
+                width={330 - mapX(OCEAN.start)}
+                height="132"
+                rx="0"
+                fill="#5db3d6"
+              />
+              <text x={mapX(5600) + 4} y="28" fontSize="9" fill="#7a6a35">
+                바닷가
+              </text>
+              <text x={mapX(OCEAN.start) + 8} y="28" fontSize="9" fill="#fff">
+                큰 바다
+              </text>
+              <rect
+                x={mapX(RUNWAY.x1)}
+                y={mapY(RUNWAY.y) - 2}
+                width={mapX(RUNWAY.x2) - mapX(RUNWAY.x1)}
+                height="4"
+                fill="#6b6f7a"
+              />
+              <text x={mapX(AIRPORT.x)} y={mapY(RUNWAY.y) - 5} fontSize="9" textAnchor="middle">
+                ✈️
+              </text>
+              <text
+                x={mapX(COAST.harbor.x)}
+                y={mapY(COAST.harbor.y)}
+                fontSize="10"
+                textAnchor="middle"
+              >
+                ⚓
+              </text>
+              <text
+                x={mapX(COAST.truck.x)}
+                y={mapY(COAST.truck.y)}
+                fontSize="10"
+                textAnchor="middle"
+              >
+                🚚
+              </text>
               {VILLAGES.map((v, i) => (
                 <g key={v.id}>
                   <circle
-                    cx={35 + (v.x / MAP.width) * 270}
-                    cy={24 + (v.y / MAP.height) * 110}
-                    r="14"
+                    cx={mapX(v.x)}
+                    cy={mapY(v.y)}
+                    r="7"
                     fill={v.color}
+                    stroke="#fff"
+                    strokeWidth="1"
                   />
-                  <text
-                    x={35 + (v.x / MAP.width) * 270}
-                    y={29 + (v.y / MAP.height) * 110}
-                    textAnchor="middle"
-                    fontSize="12"
-                  >
+                  <text x={mapX(v.x)} y={mapY(v.y) + 3} textAnchor="middle" fontSize="8">
                     {i + 1}
                   </text>
                 </g>
               ))}
               <circle
-                cx={35 + (pos.x / MAP.width) * 270}
-                cy={24 + (pos.y / MAP.height) * 110}
+                cx={mapX(pos.x)}
+                cy={mapY(pos.y)}
                 r="5"
                 fill="#cb5e64"
                 stroke="white"
                 strokeWidth="2"
               />
             </svg>
-            <small>동쪽과 서쪽이 이어져요 · 마을을 누르면 여행!</small>
+            <small>마을을 누르면 바로 여행! 동쪽 끝에는 바닷가와 큰 바다가 있어요.</small>
             <div className="adv-destinations">
               {VILLAGES.map((v, i) => (
                 <button
@@ -1225,7 +1377,9 @@ export function Village() {
         )}
       </div>
       <div className="adv-footer">
-        <p role="status">{message}</p>
+        <p role="status" className={consoleShown ? "adv-sr" : undefined}>
+          {message}
+        </p>
         <span>왼쪽 조이스틱으로 이동 · 오른쪽 버튼으로 놀이와 대화</span>
       </div>
       {truckOpen && (
