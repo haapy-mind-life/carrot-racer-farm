@@ -1129,3 +1129,42 @@
 .hj-live-board button {
   min-height: 44px;
 }
+
+.hj-decor-panel {
+  position: absolute;
+  left: 12px;
+  bottom: 190px;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: min(360px, calc(100% - 24px));
+  max-height: 45%;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: #fff4dff5;
+  border: 3px solid #ffd9a0;
+  box-shadow: 0 4px 15px #4b2e1a33;
+  color: #5a3a1c;
+  font-size: 13px;
+}
+.hj-decor-panel > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hj-decor-panel button {
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 2px solid #f0c27a;
+  background: #fffaf0;
+  font: inherit;
+}
+.hj-decor-panel button[aria-pressed="true"] {
+  background: #ffe3b0;
+}
+.hj-decor-panel button:disabled {
+  opacity: 0.5;
+}

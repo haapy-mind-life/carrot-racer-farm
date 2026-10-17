@@ -93,3 +93,54 @@ test("house grows from original home using earned coins, never below zero, keeps
   assert.equal(old.houseTier, 1);
   assert.equal(reduceWorld(old, { type: "upgrade-house" }).houseTier, 1);
 });
+
+test("interior decor costs coins, is capped, clamped, refundable, and survives migration", () => {
+  let s = migrateSave({ money: 100 });
+  s = reduceWorld(s, { type: "place-decor", id: "pumpkin", x: 99999, y: -5 });
+  assert.equal(s.money, 90);
+  assert.deepEqual(s.decor[0], { id: "pumpkin", x: 2060, y: 220 });
+  assert.equal(
+    reduceWorld(migrateSave({ money: 3 }), { type: "place-decor", id: "ghost", x: 500, y: 500 })
+      .decor.length,
+    0,
+  );
+  assert.deepEqual(migrateSave(s).decor, s.decor);
+  assert.deepEqual(migrateSave({ decor: [{ id: "nope", x: 1, y: 1 }, "x"] }).decor, []);
+  s = reduceWorld(s, { type: "remove-decor", index: 0 });
+  assert.equal(s.money, 95);
+  assert.equal(reduceWorld(s, { type: "remove-decor", index: 4 }), s);
+  let full = migrateSave({ money: 9999 });
+  for (let i = 0; i < 30; i++)
+    full = reduceWorld(full, { type: "place-decor", id: "balloon", x: 300, y: 300 });
+  assert.equal(full.decor.length, 24);
+});
+
+test("yard decor toggles and halloween party needs decorations, pays candy once and bonus once", () => {
+  let s = migrateSave({ money: 200 });
+  s = reduceWorld(s, { type: "toggle-yard", id: "lights" });
+  assert.deepEqual([s.yard, s.money], [["lights"], 188]);
+  s = reduceWorld(s, { type: "toggle-yard", id: "lights" });
+  assert.deepEqual([s.yard, s.money], [[], 188]);
+  assert.equal(reduceWorld(s, { type: "start-party" }), s);
+  for (const id of ["pumpkin", "ghost", "bat"] as const)
+    s = reduceWorld(s, { type: "place-decor", id, x: 400, y: 400 });
+  s = reduceWorld(s, { type: "start-party" });
+  assert.equal(s.halloween.active, true);
+  const before = s.money;
+  s = reduceWorld(s, { type: "collect-candy", id: "candy-hall" });
+  assert.equal(reduceWorld(s, { type: "collect-candy", id: "candy-hall" }), s);
+  assert.equal(reduceWorld(s, { type: "collect-candy", id: "bogus" }), s);
+  for (const id of ["candy-kitchen", "candy-play", "candy-dining", "candy-bed"])
+    s = reduceWorld(s, { type: "collect-candy", id });
+  assert.equal(s.money, before + 25 + 50);
+  assert.deepEqual(s.halloween, { active: false, candy: [], completed: true });
+  s = reduceWorld(s, { type: "start-party" });
+  const again = s.money;
+  for (const c of ["candy-hall", "candy-kitchen", "candy-play", "candy-dining", "candy-bed"])
+    s = reduceWorld(s, { type: "collect-candy", id: c });
+  assert.equal(s.money, again + 25);
+  assert.equal(
+    reduceWorld(migrateSave({ money: 5 }), { type: "collect-candy", id: "candy-hall" }).money,
+    5,
+  );
+});

@@ -1,6 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useGame } from "@/lib/game-state";
+import {
+  CANDY_SPOTS,
+  DECOR,
+  DECOR_LIMIT,
+  PARTY_DECOR_NEEDED,
+  YARD,
+  halloweenDecorCount,
+  useGame,
+} from "@/lib/game-state";
 import {
   MAP,
   SPAWN,
@@ -18,7 +26,7 @@ import { CarArt } from "./CarArt";
 import { carById, CARS } from "@/game/cars";
 import { WorldScenes } from "./WorldScenes";
 import { LifeWorldScene } from "./LifeWorldScene";
-import { UnifiedCoast, GrowingHome, PlaneArt } from "./UnifiedCoast";
+import { UnifiedCoast, GrowingHome, PlaneArt, YardDecor } from "./UnifiedCoast";
 import {
   COAST,
   OCEAN,
@@ -203,6 +211,20 @@ export function Village() {
         backToWorld();
         return;
       }
+      const candy = state.halloween.active
+        ? CANDY_SPOTS.find(
+            (c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170),
+          )
+        : undefined;
+      if (candy) {
+        dispatch({ type: "collect-candy", id: candy.id });
+        setMessage(
+          state.halloween.candy.length + 1 >= CANDY_SPOTS.length
+            ? "사탕을 모두 모았어! 할로윈 파티 대성공! 🎃"
+            : "사탕 발견! 🍬 " + (state.halloween.candy.length + 1) + "/" + CANDY_SPOTS.length,
+        );
+        return;
+      }
       if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) {
         setHolding("pizza");
         setMessage("피자를 손에 들었어! 식탁에서 먹어 보자.");
@@ -294,6 +316,11 @@ export function Village() {
   const actionLifeLabel = () => {
     if (region === "mansion") {
       if (nearWorld(lifePos, LIFE_SPOTS.mansionExit, 260)) return "집 밖으로";
+      if (
+        state.halloween.active &&
+        CANDY_SPOTS.some((c) => !state.halloween.candy.includes(c.id) && nearWorld(lifePos, c, 170))
+      )
+        return "사탕 줍기";
       if (nearWorld(lifePos, LIFE_SPOTS.mansionKitchen, 300)) return "음식 집기";
       if (nearWorld(lifePos, LIFE_SPOTS.mansionDining, 310) && holding) return "음식 먹기";
       return "집 탐험";
@@ -314,6 +341,7 @@ export function Village() {
     return "주변 살펴보기";
   };
   const [garageOpen, setGarageOpen] = useState(false);
+  const [decorOpen, setDecorOpen] = useState(false);
   const [carId, setCarId] = useState(loadCarId);
   const [driving, setDriving] = useState(false);
   const [callIndex, setCallIndex] = useState(-1);
@@ -720,6 +748,7 @@ export function Village() {
                 ))}
                 <g transform="translate(245 155)">
                   <GrowingHome tier={state.houseTier} />
+                  <YardDecor items={state.yard} />
                 </g>
                 <Cottage x={2100} y={1170} color="#92b8a0" label="FARM" />
                 <g transform="translate(2260 300)">
@@ -975,6 +1004,9 @@ export function Village() {
               submarine={submarine}
               explored={state.visitedSeaTreasures}
               houseTier={state.houseTier}
+              decor={state.decor}
+              candy={state.halloween.candy}
+              partyActive={state.halloween.active}
             />
           )}
         </div>
@@ -1084,11 +1116,80 @@ export function Village() {
             <small>🏠 대왕집 · 🤖 아빠 로봇 · 🍕 푸드트럭 · 🌊 잠수함</small>
             <span>💰 {state.money} 별코인</span>
             {region === "mansion" && (
-              <button onClick={() => void nav({ to: "/house" })}>🪑 기존 우리 집 꾸미기</button>
+              <>
+                <button onClick={() => void nav({ to: "/house" })}>🪑 기존 우리 집 꾸미기</button>
+                <button onClick={() => setDecorOpen((v) => !v)}>
+                  {decorOpen ? "꾸미기 닫기" : "🎨 집 안 꾸미기"}
+                </button>
+              </>
             )}
             {holding && (
               <span>손에 든 음식: {FOOD_MENU.find((food) => food.id === holding)?.name}</span>
             )}
+          </div>
+        )}
+        {region === "mansion" && decorOpen && (
+          <div className="hj-decor-panel" role="group" aria-label="집 안 꾸미기">
+            <b>
+              지금 서 있는 곳에 놓기 ({state.decor.length}/{DECOR_LIMIT})
+            </b>
+            <div>
+              {DECOR.map((d) => (
+                <button
+                  key={d.id}
+                  disabled={!ready || state.money < d.cost || state.decor.length >= DECOR_LIMIT}
+                  onClick={() => {
+                    dispatch({ type: "place-decor", id: d.id, x: lifePos.x, y: lifePos.y + 40 });
+                    setMessage(d.name + "을(를) 놓았어!");
+                  }}
+                >
+                  {d.emoji} {d.name} · {d.cost}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={!state.decor.length}
+              onClick={() => {
+                const near = state.decor
+                  .map((d, i) => ({ i, dist: Math.hypot(d.x - lifePos.x, d.y - lifePos.y - 40) }))
+                  .sort((a, b) => a.dist - b.dist)[0];
+                if (near && near.dist < 260) dispatch({ type: "remove-decor", index: near.i });
+                else setMessage("치울 장식 가까이로 가 봐!");
+              }}
+            >
+              가까운 장식 치우기
+            </button>
+            <b>마당 꾸미기</b>
+            <div>
+              {YARD.map((y) => (
+                <button
+                  key={y.id}
+                  aria-pressed={state.yard.includes(y.id)}
+                  disabled={!ready || (!state.yard.includes(y.id) && state.money < y.cost)}
+                  onClick={() => dispatch({ type: "toggle-yard", id: y.id })}
+                >
+                  {y.emoji} {y.name} · {state.yard.includes(y.id) ? "켜짐" : y.cost}
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={
+                !ready ||
+                state.halloween.active ||
+                halloweenDecorCount(state.decor) < PARTY_DECOR_NEEDED
+              }
+              onClick={() => {
+                dispatch({ type: "start-party" });
+                setMessage("할로윈 파티 시작! 집 안 곳곳의 사탕 🍬을 모아 봐!");
+                setDecorOpen(false);
+              }}
+            >
+              {state.halloween.active
+                ? "🎃 파티 중!"
+                : halloweenDecorCount(state.decor) < PARTY_DECOR_NEEDED
+                  ? `🎃 파티: 할로윈 장식 ${PARTY_DECOR_NEEDED}개 필요`
+                  : "🎃 할로윈 파티 열기"}
+            </button>
           </div>
         )}
         <div className="adv-location">

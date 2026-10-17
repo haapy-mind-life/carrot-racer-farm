@@ -1,3 +1,4 @@
+import { YARD } from "@/lib/world-model";
 import {
   AIRPORT,
   COAST,
@@ -413,6 +414,29 @@ export function PlaneArt() {
       <path d="M-108 4L-134 -42H-110L-84 -2Z" fill="#ffd36e" stroke="#fff4e0" strokeWidth="5" />
       <ellipse cx="72" cy="2" rx="30" ry="16" fill="#aee9f2" stroke="#fff" strokeWidth="4" />
       <circle cx="132" cy="8" r="8" fill="#555" />
+    </g>
+  );
+}
+
+const YARD_SPOTS: Record<string, { x: number; y: number; size: number }> = {
+  "porch-pumpkin": { x: 150, y: 330, size: 60 },
+  lights: { x: 175, y: 110, size: 44 },
+  banner: { x: 175, y: 75, size: 40 },
+  "ghost-gate": { x: 330, y: 330, size: 64 },
+};
+export function YardDecor({ items }: { items: readonly string[] }) {
+  return (
+    <g aria-hidden="true">
+      {items.map((id) => {
+        const spot = YARD_SPOTS[id];
+        const emoji = YARD.find((y) => y.id === id)?.emoji;
+        if (!spot || !emoji) return null;
+        return (
+          <text key={id} x={spot.x} y={spot.y} fontSize={spot.size} textAnchor="middle">
+            {id === "lights" ? "✨ ✨ ✨ ✨ ✨" : emoji}
+          </text>
+        );
+      })}
     </g>
   );
 }
